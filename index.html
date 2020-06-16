@@ -1,0 +1,521 @@
+<html>
+<head>
+    <title>My first three.js app</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        .no-pointer-events {
+            pointer-events: none;
+        }
+        .control-disabled {
+            color: #888;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/RhombicDodecahedronGeometry.js"></script>
+<script src="js/Particle.js"></script>
+<script src="js/Object.js"></script>
+<script src="js/InitialParticles.js"></script>
+    <script type="module">
+
+
+
+
+
+        // SETUP
+        import {GUI} from "./js/dat.gui.module.js";
+
+        var controls;
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+
+
+
+        // RESPONSIVE PROJECT
+        window.addEventListener( 'resize', function () {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            renderer.setSize( width, height);
+            camera.aspect = width/height;
+            camera.updateProjectionMatrix();
+
+        })
+
+
+
+
+        // MOUSE CONTROL
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+
+
+
+
+        // ON-SCREEN PARAMETRERS (GUI)
+        var gui = new GUI();
+        var settings = {
+            toggleGrid: false,
+            toggleAxis: true,
+            togglePointLightHelper: false,
+            // toggleSpotLightHelper: false,
+            color: "#ffff00",
+            wireFrame: false,
+            extent: false,
+            movement: false,
+            objectcolor: "#00ff00",
+            objectwireFrame: false,
+            // objectextent: false,
+            role: "Coater",
+            initialParticlecolor: "#00ff00",
+            initialParticlewireFrame: false,
+            initialParticleextent: false,
+            createTree: function(){ createTree = true },
+            play: function(){ playSimulation() },
+            pause: function(){ pauseSimulation() },
+            speed: 10,
+            nextStep: function(){ nextSimulationStep() },
+
+        };
+
+        var debugGroup = gui.addFolder( 'Debug Tools' );
+        debugGroup.add(settings, "toggleGrid").name( "Toggle Grid" ).onChange(function (visible) {
+            gridHelper.visible = visible;
+        })
+        debugGroup.add(settings, "toggleAxis").name( "Toggle Axis" ).onChange(function (visible) {
+            axesHelper.visible = visible;
+        })
+        debugGroup.add(settings, "togglePointLightHelper").name( "Point Light Helper" ).onChange(function (visible) {
+            pointLightHelper[0].visible = visible;
+            pointLightHelper[1].visible = visible;
+            pointLightHelper[2].visible = visible;
+        })
+        // debugGroup.add(settings, "toggleSpotLightHelper").name( "Spot Light Helper" ).onChange(function (visible) {
+        //     spotLightHelper.visible = visible;
+        // })
+        // debugGroup.open();
+
+
+        var particleGroup = gui.addFolder( 'Particle Settings' );
+        particleGroup.addColor( settings, "color").name( "Color" ).onChange(function(value){
+            coatingParticle.head.material.color.set(value);
+        });
+        particleGroup.add( settings, "wireFrame").name( "Wireframe" ).onChange(function(visible){
+            coatingParticle.head.material.wireframe = visible;
+        });
+        particleGroup.add( settings, "extent").name( "Extent" ).onChange(function(visible){
+            coatingParticle.head.visible = !visible;
+            sphere.visible = visible;
+        });
+        particleGroup.add( settings, "movement").name( "Movement" ).onChange(function(value){
+            if(value){
+                speed = 0.1;
+            }else{
+                speed = 0;
+            }
+
+        });
+        particleGroup.add( settings, 'role', [ "Inactive", "Retired", "Follower", "Coater", "Leader", "SmallLeader", "Branch", "SmallBranch", "Boundary"] ).name('Role').onChange(function(value){
+            switch (value) {
+                case "Inactive":
+                    coatingParticle.head.material.color.set(0x6C757D);
+                    break;
+                case "Retired":
+                    coatingParticle.head.material.color.set(0x121417);
+                    break;
+                case "Follower":
+                    coatingParticle.head.material.color.set(0x1D3557);
+                    break;
+                case "Coater":
+                    coatingParticle.head.material.color.set(0x1D3557);
+                    break;
+                case "Leader":
+                    coatingParticle.head.material.color.set(0xCF2626);
+                    break;
+                case "SmallLeader":
+                    coatingParticle.head.material.color.set(0xEA6C1B);
+                    break;
+                case "Branch":
+                    coatingParticle.head.material.color.set(0x583B23);
+                    break;
+                case "SmallBranch":
+                    coatingParticle.head.material.color.set(0x754E2F);
+                    break;
+                case "Boundary":
+                    coatingParticle.head.material.color.set(0x000000);
+                    break;
+                default:
+                    break
+
+            }
+        });
+        particleGroup.open();
+
+        var objectGroup = gui.addFolder( 'Object Settings' );
+        objectGroup.addColor( settings, "objectcolor").name( "Color" ).onChange(function(value){
+            for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
+                layer[Object.keys(layer).length-1][i].head.material.color.set(value);
+            }
+        });
+        objectGroup.add( settings, "objectwireFrame").name( "Wireframe" ).onChange(function(visible){
+            for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
+                layer[Object.keys(layer).length-1][i].head.material.wireframe = visible;
+            }
+        });
+        // objectGroup.add( settings, "objectextent").name( "Extent" ).onChange(function(visible){
+        //     rhombicDodecahedron.visible = !visible;
+        //     sphere.visible = visible;
+        // })
+        objectGroup.open();
+
+        var initialParticleGroup = gui.addFolder( 'Initial Particles Settings' );
+        initialParticleGroup.addColor( settings, "initialParticlecolor").name( "Color" ).onChange(function(value){
+            for (let i = 0; i < Object.keys(initialParticles).length; i++) {
+                initialParticles[i].head.material.color.set(value);
+            }
+        });
+        initialParticleGroup.add( settings, "initialParticlewireFrame").name( "Wireframe" ).onChange(function(visible){
+            for (let i = 0; i < Object.keys(initialParticles).length; i++) {
+                initialParticles[i].head.material.wireframe = visible;
+            }
+        });
+        initialParticleGroup.add( settings, "initialParticleextent").name( "Extent" ).onChange(function(visible){
+            for (let i = 0; i < Object.keys(initialParticles).length; i++) {
+                initialParticles[i].head.visible = !visible;
+                initialParticles[i].point.visible = visible;
+            }
+        });
+        initialParticleGroup.add( settings, "createTree").name( "Create Tree" );
+        initialParticleGroup.open();
+
+        var simulationGroup = gui.addFolder( 'Simulation Settings' );
+        var alternateButton = [];
+        alternateButton.push( simulationGroup.add( settings, 'play' ).name('Play') );
+        alternateButton.push( simulationGroup.add( settings, 'pause' ).name('Pause') );
+
+        alternateButton.forEach( function ( control ) {
+
+            control.classList1 = control.domElement.parentElement.parentElement.classList;
+            control.classList2 = control.domElement.previousElementSibling.classList;
+
+            control.setDisabled = function () {
+
+                control.classList1.add( 'no-pointer-events' );
+                control.classList2.add( 'control-disabled' );
+
+            };
+
+            control.setEnabled = function () {
+
+                control.classList1.remove( 'no-pointer-events' );
+                control.classList2.remove( 'control-disabled' );
+
+            };
+        })
+        alternateButton[1].setDisabled();
+
+        simulationGroup.add( settings, 'speed' ).min(0).max(100).step(1).name('Step Duration (ms)').onChange(function(value){
+
+        });
+        simulationGroup.add( settings, 'nextStep' ).name('Next Step');
+        simulationGroup.open();
+
+
+
+        // LIGHT
+        var ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.1 );
+        scene.add( ambientLight );
+
+        var pointLight = {};
+        pointLight[0] = new THREE.PointLight( 0xFFFFFF, 0.7 );
+        pointLight[0].position.set( -20, 25, 25 );
+        scene.add( pointLight[0] );
+
+        pointLight[1] = new THREE.PointLight( 0xFFFFFF, 0.3 );
+        pointLight[1].position.set( -25, -25, -25 );
+        scene.add( pointLight[1] );
+
+        pointLight[2] = new THREE.PointLight( 0xFFFFFF, 0.3 );
+        pointLight[2].position.set( 33, 0, 0 );
+        scene.add( pointLight[2] );
+
+
+        // var spotLight = new THREE.SpotLight( 0xffffff, 0.6 );
+        // spotLight.position.set( 5, 50, 5 );
+        // scene.add( spotLight );
+
+        // var spotLightHelper = new THREE.SpotLightHelper( spotLight, "#FF0000" );
+        // spotLightHelper.visible = false;
+        // scene.add( spotLightHelper );
+
+        var sphereSize = 1;
+        var pointLightHelper = {};
+        pointLightHelper[0] = new THREE.PointLightHelper( pointLight[0], sphereSize, "#FF0000" );
+        pointLightHelper[0].visible = true;
+        scene.add( pointLightHelper[0] );
+
+        pointLightHelper[1] = new THREE.PointLightHelper( pointLight[1], sphereSize, "#FF0000" );
+        pointLightHelper[1].visible = true;
+        scene.add( pointLightHelper[1] );
+
+        pointLightHelper[2] = new THREE.PointLightHelper( pointLight[2], sphereSize, "#FF0000" );
+        pointLightHelper[2].visible = true;
+        scene.add( pointLightHelper[2] );
+
+
+
+
+        // TEST
+
+
+
+
+        // GRID
+        var size = 1000;
+        var divisions = 250;
+        var gridHelper = new THREE.GridHelper( size, divisions );
+        gridHelper.visible = false;
+        scene.add( gridHelper );
+
+
+
+        // AXIS HELPER
+        var axesHelper = new THREE.AxesHelper( 10 );
+        axesHelper.material.linewidth = 5;
+        scene.add( axesHelper );
+
+
+
+
+        // OBJECT CREATION
+        var availablePositions = {};
+        availablePositions = generateObject(3, scene);
+
+
+        // INITIAL PARTICLES CREATION
+        renderInitialParticles(scene);
+
+
+
+
+
+        // COATING PARTICLE
+        var coatingParticle = new Particle();
+        coatingParticle.head.position.x = availablePositions[5].x;
+        coatingParticle.head.position.y = availablePositions[5].y;
+        coatingParticle.head.position.z = availablePositions[5].z;
+        coatingParticle.head.material.color.set("#ffff00");
+        console.log(coatingParticle.head.position);
+        scene.add( coatingParticle.head );
+
+        var sphereGeometry = new THREE.SphereGeometry( 0.2, 32, 32 );
+        var sphereMaterial = new THREE.MeshBasicMaterial( {color: 0x000000, wireframe: false} );
+        var sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+        sphere.visible = false;
+        sphere.position.x = availablePositions[5].x;
+        sphere.position.y = availablePositions[5].y;
+        sphere.position.z = availablePositions[5].z;
+        scene.add( sphere );
+
+
+
+
+        // LABEL LINES
+        // var materialLine = new THREE.MeshBasicMaterial({ color: "#000000", wireframeLinewidth: 10});
+        // var linesPoints = [];
+        // linesPoints.push( new THREE.Vector3( 0, 0, 0 ) );
+        // linesPoints.push( new THREE.Vector3( 10, -10, 0 ) );
+        //
+        // var lineGeometry = new THREE.BufferGeometry().setFromPoints( linesPoints );
+        //
+        // var line = new THREE.LineSegments( lineGeometry, materialLine );
+        // scene.add( line );
+
+
+
+
+        camera.position.z = 50;
+        scene.background = new THREE.Color( 0xffffff );
+
+        function degrees_to_radians(degrees)
+        {
+            var pi = Math.PI;
+            return degrees * (pi/180);
+        }
+
+        // MOVEMENT
+        var targetPosition = new THREE.Vector3();
+        targetPosition.x = coatingParticle.head.position.x;
+        targetPosition.y = coatingParticle.head.position.y;
+        targetPosition.z = coatingParticle.head.position.z;
+        function calculateParticleTestNewMovementPosition(){
+            var movePos = coatingParticle.getPosAtFaceI(getRandomInt(0,11));
+            if(doesPositionExistInPositionList(movePos, availablePositions)){
+                targetPosition.x = movePos.x;
+                targetPosition.y = movePos.y;
+                targetPosition.z = movePos.z;
+            }
+        }
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function round(value) {
+            return Math.round((value + Number.EPSILON) * 100) / 100;
+        }
+
+        function adjustMovement(particle, target){
+            adjustNegativeMovement(particle, target);
+            adjustPositiveMovement(particle, target);
+        }
+
+        function adjustPositiveMovement(particle, target){
+            if (particle.head.position.x < target.x) {
+                particle.head.position.x = particle.head.position.x + speed;
+            }
+            if (particle.head.position.y < target.y) {
+                particle.head.position.y = particle.head.position.y + speed;
+            }
+            if (particle.head.position.z < target.z) {
+                particle.head.position.z = particle.head.position.z + speed;
+            }
+        }
+
+        function adjustNegativeMovement(particle, target){
+            if (particle.head.position.x > target.x) {
+                particle.head.position.x = particle.head.position.x - speed;
+            }
+            if (particle.head.position.y > target.y) {
+                particle.head.position.y = particle.head.position.y - speed;
+            }
+            if (particle.head.position.z > target.z) {
+                particle.head.position.z = particle.head.position.z - speed;
+            }
+        }
+
+        function hasObjectReachedTarget(head, target){
+            if (Math.abs(head.position.x - target.x) <= speed ) {
+                if (Math.abs(head.position.y - target.y) <= speed ) {
+                    if (Math.abs(head.position.z - target.z) <= speed ) {
+                        head.position.setX(Math.round(head.position.x));
+                        head.position.setY(Math.round(head.position.y));
+                        head.position.setZ(Math.round(head.position.z));
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function movementDebug(){
+            console.log("  ");
+            console.log(coatingParticle.head.position.x+ " and "+ targetPosition.x);
+            console.log(coatingParticle.head.position.x < targetPosition.x);
+            console.log(coatingParticle.head.position.x > targetPosition.x);
+            console.log(coatingParticle.head.position.y+ " and "+ targetPosition.y);
+            console.log(coatingParticle.head.position.y < targetPosition.y);
+            console.log(coatingParticle.head.position.y > targetPosition.y);
+            console.log(coatingParticle.head.position.z+ " and "+ targetPosition.z);
+            console.log(coatingParticle.head.position.z < targetPosition.z);
+            console.log(coatingParticle.head.position.z > targetPosition.z);
+        }
+
+        function getNbrAtPosition(position, list){
+            for (let i = 0; i < Object.keys(list).length; i++) {
+                if(position.distanceTo(list[i].head.position) === 0) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+
+        // ITERATION STEP
+        var particleSystem = {};
+        function iterationStep(particle){
+            if(particle.role === "Inactive"){
+                var nbrPosition;
+                for (let i = 0; i < 12; i++) {
+                    nbrPosition = particle.getPosAtFaceI(i);
+                    var nbrParticleIdx = getNbrAtPosition(nbrPosition, initialParticles);
+                    // console.log("Particle found: "+ nbrParticleIdx)
+                    if(nbrParticleIdx > -1){
+                        if(initialParticles[nbrParticleIdx].role === "Coater"){
+                            createConnection(nbrPosition, particle.head.position);
+                            particle.convertToRole("Coater");
+                            break;
+                        }
+                    }
+                    if(nbrPosition.distanceTo(coatingParticle.head.position) === 0){
+                        createConnection(nbrPosition, particle.head.position);
+                        particle.convertToRole("Coater");
+                        break;
+                    }
+                }
+            }
+        }
+
+        function createConnection(vector1, vector2){
+            var points = [vector1, vector2];
+            var material = new THREE.LineBasicMaterial({
+                color: 0x0000ff
+            });
+            var geometry = new THREE.BufferGeometry().setFromPoints( points );
+            var line = new THREE.LineSegments( geometry, material );
+            scene.add( line );
+            console.log("Added line");
+
+        }
+
+        var counter = 0;
+        function nextSimulationStep(){
+            console.log("Simulation Step: " + counter);
+            iterationStep(initialParticles[counter]);
+            counter++;
+            counter = counter % (Object.keys(initialParticles).length);
+        }
+
+        function playSimulation(){
+            console.log("Play Simulation");
+            alternateButton[1].setEnabled();
+            alternateButton[0].setDisabled();
+        }
+
+        function pauseSimulation(){
+            console.log("Pause simulation");
+            alternateButton[0].setEnabled();
+            alternateButton[1].setDisabled();
+        }
+
+
+        var speed = 0.0;
+        var createTree = false;
+        var animate = function () {
+            requestAnimationFrame( animate );
+            if(createTree){
+                setTimeout(nextSimulationStep(), 2000);
+            }
+
+            adjustMovement(coatingParticle, targetPosition);
+            if(hasObjectReachedTarget(coatingParticle.head, targetPosition)){
+                calculateParticleTestNewMovementPosition();
+            }
+
+            renderer.render( scene, camera );
+        };
+
+        animate();
+    </script>
+</body>
+</html>

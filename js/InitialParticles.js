@@ -106,7 +106,7 @@ var initialParticles = {};
 ].forEach(function(pos){
     var initialParticle = new Particle();
     initialParticle.head.position.set(pos.x, pos.y, pos.z);
-    initialParticle.point.position.set(pos.x, pos.y, pos.z);
+    initialParticle.tail.position.set(pos.x, pos.y, pos.z);
     initialParticle.convertToRole("Inactive");
     initialParticles[initialParticlesIdx] = initialParticle;
     initialParticlesIdx++;
@@ -115,6 +115,8 @@ var initialParticles = {};
 function renderInitialParticles(scene){
     for (let j = 0; j < Object.keys(initialParticles).length; j++) {
         scene.add(initialParticles[j].head);
-        scene.add(initialParticles[j].point);
+        scene.add(initialParticles[j].tail);
+        scene.add(initialParticles[j].headTailConnection);
+        scene.add(initialParticles[j].targetConnection);
     }
 }

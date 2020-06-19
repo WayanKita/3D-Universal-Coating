@@ -8,7 +8,7 @@ function generateObject(size, scene){
     particles[0].head.position.set(0,0,0);
     layer[0] = particles;
     for (let i = 0; i < size; i++) {
-        addBoundingLayer(i);
+        addBoundingLayer(i, scene);
     }
     renderObject(scene);
     availablePositions = calculateAvailablePositions();

@@ -1,6 +1,11 @@
-var xOffSet = -2;
-var yOffSet = 12;
-var zOffSet = 14;
+// var xOffSet = -2;
+// var yOffSet = 12;
+// var zOffSet = 14;
+
+var xOffSet = -4;
+var yOffSet = 8;
+var zOffSet = 12;
+
 var initialParticlesIdx = 0;
 
 var initialParticles = {};
@@ -84,6 +89,31 @@ var initialParticles = {};
     {x: -4  + xOffSet, y: yOffSet, z: 4 + zOffSet},
     {x: xOffSet, y: 4 + yOffSet, z: 4 + zOffSet},
 
+    {x: xOffSet, y: 6 + yOffSet, z: 6 + zOffSet},
+    {x: xOffSet, y: 8 + yOffSet, z: 8 + zOffSet},
+    {x: xOffSet, y: 4 + yOffSet, z: 8 + zOffSet},
+
+    {x: xOffSet, y: 8 + yOffSet, z: 8 + zOffSet},
+    {x: xOffSet, y: 10 + yOffSet, z: 10 + zOffSet},
+    {x: xOffSet, y: 6 + yOffSet, z: 10 + zOffSet},
+
+    {x: 2 + xOffSet, y: 6 + 2 + yOffSet, z: 6 + zOffSet},
+    {x: 2 + xOffSet, y: 8 + 2 + yOffSet, z: 8 + zOffSet},
+    {x: 2 + xOffSet, y: 4 + 2 + yOffSet, z: 8 + zOffSet},
+
+    {x: 2 + xOffSet, y: 8 + 2 + yOffSet, z: 8 + zOffSet},
+    {x: 2 + xOffSet, y: 10 + 2 + yOffSet, z: 10 + zOffSet},
+    {x: 2 + xOffSet, y: 6 + 2 + yOffSet, z: 10 + zOffSet},
+
+    {x: -2 + xOffSet, y: 6 + 2 + yOffSet, z: 6 + zOffSet},
+    {x: -2 + xOffSet, y: 8 + 2 + yOffSet, z: 8 + zOffSet},
+    {x: -2 + xOffSet, y: 4 + 2 + yOffSet, z: 8 + zOffSet},
+
+    {x: -2 + xOffSet, y: 8 + 2 + yOffSet, z: 8 + zOffSet},
+    {x: -2 + xOffSet, y: 10 + 2 + yOffSet, z: 10 + zOffSet},
+    {x: -2 + xOffSet, y: 6 + 2 + yOffSet, z: 10 + zOffSet},
+
+
     {x: xOffSet, y: yOffSet, z: -4 + zOffSet},
     {x: 2   + xOffSet, y: 2 + yOffSet, z: -4 + zOffSet},
     {x: 2   + xOffSet, y: -2 + yOffSet, z: -4 + zOffSet},
@@ -117,6 +147,6 @@ function renderInitialParticles(scene){
         scene.add(initialParticles[j].head);
         scene.add(initialParticles[j].tail);
         scene.add(initialParticles[j].headTailConnection);
-        scene.add(initialParticles[j].targetConnection);
+        scene.add(initialParticles[j].target0);
     }
 }

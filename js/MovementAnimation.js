@@ -5,7 +5,7 @@ targetPosition.y = coatingParticle.headRhombic.position.y;
 targetPosition.z = coatingParticle.headRhombic.position.z;
 function calculateParticleTestNewMovementPosition(){
     var movePos = coatingParticle.getPosAtFaceI(getRandomInt(0,11));
-    if(doesPositionExistInPositionList(movePos, availablePositions)){
+    if(doesPositionExistInPositionList(movePos, availableMovementPositions)){
         targetPosition.x = movePos.x;
         targetPosition.y = movePos.y;
         targetPosition.z = movePos.z;

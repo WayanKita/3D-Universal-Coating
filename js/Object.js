@@ -24,9 +24,7 @@ function addBoundingLayer(layerIdx){
         for (let i = 0; i < 12; i++) {
             particleNbrPosition = layer[layerIdx][0].getPosAtFaceI(i);
             particlesForLayer[arrayIdx] = new Particle();
-            particlesForLayer[arrayIdx].head.position.setX(particleNbrPosition.x);
-            particlesForLayer[arrayIdx].head.position.setY(particleNbrPosition.y);
-            particlesForLayer[arrayIdx].head.position.setZ(particleNbrPosition.z);
+            particlesForLayer[arrayIdx].head.position.set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
             arrayIdx++;
         }
         layer[layerIdx+1] = particlesForLayer;
@@ -41,9 +39,7 @@ function addBoundingLayer(layerIdx){
                     if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx-1])){
                         if(!doesPositionExistInLayer(particleNbrPosition, particlesForLayer)) {
                             particlesForLayer[arrayIdx] = new Particle();
-                            particlesForLayer[arrayIdx].head.position.setX(particleNbrPosition.x);
-                            particlesForLayer[arrayIdx].head.position.setY(particleNbrPosition.y);
-                            particlesForLayer[arrayIdx].head.position.setZ(particleNbrPosition.z);
+                            particlesForLayer[arrayIdx].head.position.set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
                             arrayIdx++;
                         }
                     }
@@ -75,7 +71,8 @@ function doesPositionExistInPositionList(position, positionList){
 
 function renderObject(scene){
     for (let j = 0; j < Object.keys(layer[Object.keys(layer).length-1]).length; j++) {
-        scene.add(layer[Object.keys(layer).length-1][j].head)
+        layer[Object.keys(layer).length-1][j].convertToRole("Boundary");
+        scene.add(layer[Object.keys(layer).length-1][j].head);
     }
 }
 
@@ -88,7 +85,6 @@ function calculateAvailablePositions(){
         // For each face of that particle
         for (let i = 0; i < 12; i++) {
             // Get position adjacent to face j
-
             particleNbrPosition = layer[layerIdx][j].getPosAtFaceI(i);
             if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx])){
                 if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx-1])){

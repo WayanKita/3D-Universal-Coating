@@ -1,7 +1,6 @@
 function Particle(){
     this.role = "temp";
-    this.color = "#00ff00";
-    this.moveDir = -1;
+    this.color = "#ff00ff";
     this.material = new THREE.MeshPhongMaterial( { color: "#00ff00", wireframe: false, flatShading: true} );
     this.headRhombic = new THREE.Mesh( RhombicDodecahedronGeometry, this.material);
     this.tailRhombic = new THREE.Mesh( RhombicDodecahedronGeometry, this.material);
@@ -11,36 +10,27 @@ function Particle(){
     this.head = new THREE.Object3D().add(this.headRhombic, this.headPoint);
     this.tail = new THREE.Object3D().add(this.tailRhombic, this.tailPoint);
     this.target = [];
-    this.targetConnection = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0x000000, dashSize: 0.1, gapSize: 0.05 }));
+    this.target0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0xff00ff, dashSize: 0.1, gapSize: 0.1 }));
+    this.target1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0x00ffff, dashSize: 0.1, gapSize: 0.1 }));
+    // this.targetConnection = new THREE.ArrowHelper(this.head.position)
     this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
     this.isContracted = true;
-    this.moveBrancDir = -1;
 
-    // this.contractParticle = function(){
-    //     this.isContracted = true;
-    //     this.tail.visible = false;
-    // }
 
-    // this.pullParticle = function(particle){
-    //     if(this.isContracted){
-    //         particle.tail.position.set(particle.head.position.x, particle.head.position.y, particle.head.position.z);
-    //         particle.tail.visible = true;
-    //         particle.head.position.set(particle.target.x, particle.target.y, particle.target.z);
-    //         particle.headTailConnection.geometry.setFromPoints([particle.head.position, particle.tail.position]);
-    //         particle.headTailConnection.visible = true;
-    //         particle.isContracted = false;
-    //         particle.target = [this.head.position];
-    //     }else{
-    //         console.log("Can't pull particle because this is not contracted");
-    //     }
-    //
-    // }
 
     this.contractParticle = function () {
         this.tail.position.set(this.head.position.x, this.head.position.y, this.head.position.z);
         this.tail.visible = false;
         this.headTailConnection.visible = false;
         this.isContracted = true;
+    }
+
+    this.updateSingleTarget = function(target){
+        if((this.head.position.distanceTo(target) > 2.9) || (this.tail.position.distanceTo(target) > 5.7)){
+            console.log(this.head.position.distanceTo(target), this.tail.position.distanceTo(target));
+        }
+        this.target = [];
+        this.target.push(target);
     }
 
     this.expandParticle = function(destinationNode){
@@ -84,6 +74,14 @@ function Particle(){
                 this.role = "SmallLeader";
                 this.setParticleColor(0xEA6C1B);
                 break;
+            case "SuperLeader":
+                this.role = "SuperLeader";
+                this.setParticleColor(0xEA6C1B);
+                break;
+            case "Bridge":
+                this.role = "Bridge";
+                this.setParticleColor(0x583B23);
+                break;
             case "Branch":
                 this.role = "Branch";
                 this.setParticleColor(0x583B23);
@@ -94,11 +92,12 @@ function Particle(){
                 break;
             case "Leaf":
                 this.role = "Leaf";
+                this.target = [];
                 this.setParticleColor(0x04471C);
                 break;
             case "Boundary":
                 this.role = "Boundary";
-                this.setParticleColor(0x000000);
+                this.setParticleColor(0xffffff);
                 break;
             default:
                 this.role = "Inactive"
@@ -191,6 +190,7 @@ function Particle(){
                 // code block
                 break;
             default:
+                console.log("Error, get nbr particle to face failed");
                 return nbrParticlePos;
         }
         return nbrParticlePos;

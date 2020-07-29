@@ -2,9 +2,15 @@
 // var yOffSet = 12;
 // var zOffSet = 14;
 
+//single leader
+// var xOffSet = -4;
+// var yOffSet = 8;
+// var zOffSet = 12;
+
+//multiple leaders
 var xOffSet = -4;
 var yOffSet = 8;
-var zOffSet = 12;
+var zOffSet = 8;
 
 var initialParticlesIdx = 0;
 
@@ -149,4 +155,10 @@ function renderInitialParticles(scene){
         scene.add(initialParticles[j].headTailConnection);
         scene.add(initialParticles[j].target0);
     }
+}
+
+function moveInitialParticles(){
+    xOffSet = -6;
+    yOffSet = 8;
+    zOffSet = 10;
 }

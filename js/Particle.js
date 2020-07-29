@@ -15,7 +15,7 @@ function Particle(){
     // this.targetConnection = new THREE.ArrowHelper(this.head.position)
     this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
     this.isContracted = true;
-
+    this.leaderPointer = new THREE.Vector3(0,0,0);
 
 
     this.contractParticle = function () {
@@ -52,31 +52,35 @@ function Particle(){
         switch (role) {
             case "Inactive":
                 this.role = "Inactive";
-                this.setParticleColor(0x6C757D);
+                this.setParticleColor(0xcab2d6);
                 break;
             case "Retired":
                 this.role = "Retired";
-                this.setParticleColor(0x121417);
+                this.setParticleColor(0x6a3d9a);
                 break;
             case "Follower":
                 this.role = "Follower";
-                this.setParticleColor(0x477AC2);
+                this.setParticleColor(0x1f78b4);
                 break;
             case "Coater":
                 this.role = "Coater";
-                this.setParticleColor(0x1D3557);
+                this.setParticleColor(0xa6cee3);
                 break;
             case "Leader":
                 this.role = "Leader";
-                this.setParticleColor(0xCF2626);
+                this.setParticleColor(0xff7f00);
                 break;
             case "SmallLeader":
                 this.role = "SmallLeader";
-                this.setParticleColor(0xEA6C1B);
+                this.setParticleColor(0xfdbf6f);
                 break;
             case "SuperLeader":
                 this.role = "SuperLeader";
-                this.setParticleColor(0xEA6C1B);
+                this.setParticleColor(0xe31a1c);
+                break;
+            case "SmallSuperLeader":
+                this.role = "SmallSuperLeader";
+                this.setParticleColor(0xfb9a99);
                 break;
             case "Bridge":
                 this.role = "Bridge";
@@ -84,16 +88,16 @@ function Particle(){
                 break;
             case "Branch":
                 this.role = "Branch";
-                this.setParticleColor(0x583B23);
+                this.setParticleColor(0xb15928);
                 break;
             case "SmallBranch":
                 this.role = "SmallBranch";
-                this.setParticleColor(0x754E2F);
+                this.setParticleColor(0xffff99);
                 break;
             case "Leaf":
                 this.role = "Leaf";
                 this.target = [];
-                this.setParticleColor(0x04471C);
+                this.setParticleColor(0x33a02c);
                 break;
             case "Boundary":
                 this.role = "Boundary";

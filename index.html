@@ -105,6 +105,7 @@
         var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
         var renderer = new THREE.WebGLRenderer();
         var raycaster, mouse = { x: 0, y: 0 }, INTERSECTED;
+        var singleLeader = false;
 
         renderer.setSize( window.innerWidth, window.innerHeight );
         document.body.appendChild( renderer.domElement );
@@ -197,63 +198,65 @@
         // })
         // debugGroup.open();
 
+        if(singleLeader){
+            var particleGroup = gui.addFolder( 'Particle Settings' );
+            particleGroup.addColor( settings, "color").name( "Color" ).onChange(function(value){
+                coatingParticle.headRhombic.material.color.set(value);
+            });
+            particleGroup.add( settings, "wireFrame").name( "Wireframe" ).onChange(function(visible){
+                coatingParticle.headRhombic.material.wireframe = visible;
+            });
+            particleGroup.add( settings, "extent").name( "Extent" ).onChange(function(visible){
+                coatingParticle.headRhombic.visible = !visible;
+                coatingParticle.headPoint.visible = visible;
+                coatingParticle.tailRhombic.visible = !visible;
+                coatingParticle.tailPoint.visible = visible;
+            });
+            particleGroup.add( settings, "movement").name( "Movement" ).onChange(function(value){
+                if(value){
+                    speed = 0.1;
+                }else{
+                    speed = 0;
+                }
 
-        var particleGroup = gui.addFolder( 'Particle Settings' );
-        particleGroup.addColor( settings, "color").name( "Color" ).onChange(function(value){
-            coatingParticle.headRhombic.material.color.set(value);
-        });
-        particleGroup.add( settings, "wireFrame").name( "Wireframe" ).onChange(function(visible){
-            coatingParticle.headRhombic.material.wireframe = visible;
-        });
-        particleGroup.add( settings, "extent").name( "Extent" ).onChange(function(visible){
-            coatingParticle.headRhombic.visible = !visible;
-            coatingParticle.headPoint.visible = visible;
-            coatingParticle.tailRhombic.visible = !visible;
-            coatingParticle.tailPoint.visible = visible;
-        });
-        particleGroup.add( settings, "movement").name( "Movement" ).onChange(function(value){
-            if(value){
-                speed = 0.1;
-            }else{
-                speed = 0;
-            }
+            });
+            particleGroup.add( settings, 'role', [ "Inactive", "Retired", "Follower", "Coater", "Leader", "SmallLeader", "Branch", "SmallBranch", "Boundary"] ).name('Role').onChange(function(value){
+                switch (value) {
+                    case "Inactive":
+                        coatingParticle.headRhombic.material.color.set(0x6C757D);
+                        break;
+                    case "Retired":
+                        coatingParticle.headRhombic.material.color.set(0x121417);
+                        break;
+                    case "Follower":
+                        coatingParticle.headRhombic.material.color.set(0x1D3557);
+                        break;
+                    case "Coater":
+                        coatingParticle.headRhombic.material.color.set(0x1D3557);
+                        break;
+                    case "Leader":
+                        coatingParticle.headRhombic.material.color.set(0xCF2626);
+                        break;
+                    case "SmallLeader":
+                        coatingParticle.headRhombic.material.color.set(0xEA6C1B);
+                        break;
+                    case "Branch":
+                        coatingParticle.headRhombic.material.color.set(0x583B23);
+                        break;
+                    case "SmallBranch":
+                        coatingParticle.headRhombic.material.color.set(0x754E2F);
+                        break;
+                    case "Boundary":
+                        coatingParticle.headRhombic.material.color.set(0x000000);
+                        break;
+                    default:
+                        break
 
-        });
-        particleGroup.add( settings, 'role', [ "Inactive", "Retired", "Follower", "Coater", "Leader", "SmallLeader", "Branch", "SmallBranch", "Boundary"] ).name('Role').onChange(function(value){
-            switch (value) {
-                case "Inactive":
-                    coatingParticle.headRhombic.material.color.set(0x6C757D);
-                    break;
-                case "Retired":
-                    coatingParticle.headRhombic.material.color.set(0x121417);
-                    break;
-                case "Follower":
-                    coatingParticle.headRhombic.material.color.set(0x1D3557);
-                    break;
-                case "Coater":
-                    coatingParticle.headRhombic.material.color.set(0x1D3557);
-                    break;
-                case "Leader":
-                    coatingParticle.headRhombic.material.color.set(0xCF2626);
-                    break;
-                case "SmallLeader":
-                    coatingParticle.headRhombic.material.color.set(0xEA6C1B);
-                    break;
-                case "Branch":
-                    coatingParticle.headRhombic.material.color.set(0x583B23);
-                    break;
-                case "SmallBranch":
-                    coatingParticle.headRhombic.material.color.set(0x754E2F);
-                    break;
-                case "Boundary":
-                    coatingParticle.headRhombic.material.color.set(0x000000);
-                    break;
-                default:
-                    break
+                }
+            });
+            particleGroup.open();
+        }
 
-            }
-        });
-        particleGroup.open();
 
         var objectGroup = gui.addFolder( 'Object Settings' );
         objectGroup.addColor( settings, "objectcolor").name( "Color" ).onChange(function(value){
@@ -410,6 +413,11 @@
         var availableMovementPositions = {};
         availableMovementPositions = generateObject(2, scene);
 
+        // Multiple leader adjustments
+        if(!singleLeader){
+            moveInitialParticles();
+        }
+
 
         // INITIAL PARTICLES CREATION
         renderInitialParticles(scene);
@@ -419,15 +427,18 @@
 
 
         // COATING PARTICLE
-        var coatingParticle = new Particle();
-        coatingParticle.head.position.set(availableMovementPositions[5].x, availableMovementPositions[5].y, availableMovementPositions[5].z);
-        coatingParticle.tail.position.set(availableMovementPositions[5].x, availableMovementPositions[5].y, availableMovementPositions[5].z);
+        if(singleLeader){
+            var coatingParticle = new Particle();
+            coatingParticle.head.position.set(availableMovementPositions[5].x, availableMovementPositions[5].y, availableMovementPositions[5].z);
+            coatingParticle.tail.position.set(availableMovementPositions[5].x, availableMovementPositions[5].y, availableMovementPositions[5].z);
+            coatingParticle.convertToRole("Leader");
+            scene.add( coatingParticle.head );
+            scene.add( coatingParticle.tail );
+            scene.add( coatingParticle.headTailConnection );
+            scene.add( coatingParticle.target0 );
 
-        coatingParticle.convertToRole("Leader");
-        scene.add( coatingParticle.head );
-        scene.add( coatingParticle.tail );
-        scene.add( coatingParticle.headTailConnection );
-        scene.add( coatingParticle.target0 );
+        }
+
         // coatingParticle.headTailConnection.visible = false;
 
 
@@ -435,7 +446,9 @@
 
 
 
-        camera.position.z = 50;
+        camera.position.x = -50;
+        camera.position.y = 25;
+        camera.lookAt( 0, 0, 0 );
         scene.background = new THREE.Color( 0xffffff );
 
         function degrees_to_radians(degrees)
@@ -476,7 +489,10 @@
         }
 
         function gatherParticles(){
-            particleSystem.push(coatingParticle);
+            if(singleLeader){
+                particleSystem.push(coatingParticle);
+            }
+
             for (let i = 0; i < Object.keys(initialParticles).length ; i++) {
                 particleSystem.push(initialParticles[i]);
             }
@@ -765,6 +781,7 @@
         var particleSystem = [];
         var expansionPhase = true;
         gatherParticles();
+        setSuperLeader(false);
 
         function iterationStep(particle){
 
@@ -778,19 +795,41 @@
                             var nbrParticleIdx = getNbrIdxAtPosition(nbrPosition, particleSystem);
                             if(nbrParticleIdx > -1){
                                 if(particleSystem[nbrParticleIdx].role === "Follower"){
-                                    // particle.target = [nbrPosition];
-                                    updateSingleTarget(particle, nbrPosition);
-                                    updateTargetMarker(particle);
-                                    particle.convertToRole("Follower");
-                                    break;
-                                }
-                                else if(particleSystem[nbrParticleIdx].role === "Leader"){
-                                    // particle.target = [nbrPosition];
-                                    if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
+                                    if(isNbrObject(particle)){
+                                        break;
+                                    }else{
                                         updateSingleTarget(particle, nbrPosition);
                                         updateTargetMarker(particle);
                                         particle.convertToRole("Follower");
                                         break;
+                                    }
+
+                                }
+                                else if(particleSystem[nbrParticleIdx].role === "Leader"){
+                                    if(isNbrObject(particle)){
+                                        particle.convertToRole("Leader");
+                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].head.position)
+                                        break;
+                                    }else{
+                                        if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
+                                            updateSingleTarget(particle, nbrPosition);
+                                            updateTargetMarker(particle);
+                                            particle.convertToRole("Follower");
+                                            break;
+                                        }
+                                    }
+                                }else if(particleSystem[nbrParticleIdx].role === "SuperLeader"){
+                                    if(isNbrObject(particle)){
+                                        particle.convertToRole("Leader");
+                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].head.position)
+                                        break;
+                                    }else{
+                                        if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
+                                            updateSingleTarget(particle, nbrPosition);
+                                            updateTargetMarker(particle);
+                                            particle.convertToRole("Follower");
+                                            break;
+                                        }
                                     }
 
                                 }
@@ -821,7 +860,31 @@
                             particle.convertToRole("Retired");
                         }
                         // Check if a nbr is Follower
-
+                        break
+                    case "SuperLeader":
+                        if(expansionPhase){
+                            if(particle.target.length === 0){
+                                if(isNbrOfRole(particle, "Inactive")){
+                                    break;
+                                }
+                                let availablePositions = getAvExpandPosition(particle);
+                                if(availablePositions.length > 0){
+                                    particle.expandParticle(availablePositions[getRandomInt(0, availablePositions.length-1)]);
+                                }
+                                break;
+                            }
+                            if(checkForTermination(particle)){
+                                particle.convertToRole("Retired");
+                                pauseSimulation();
+                                console.log("Layer Complete");
+                            }
+                            if(!isAParticleTargetingMe(particle)){
+                                expansionPhase = true;
+                            }
+                        }else{
+                            particle.convertToRole("Retired");
+                        }
+                        // Check if a nbr is Follower
                         break
                     case "Leaf":
                         // Check if a nbr is Follower
@@ -884,11 +947,38 @@
                             }
                         }
                         break;
+                    case "SuperLeader":
+                        for (let j = 0; j < particleSystem.length; j++) {
+                            if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
+                                pullParticle(particle, particleSystem[j]);
+                                particleSystem[j].convertToRole("SmallSuperLeader");
+                                if(particle.target.length === 0){
+                                    particle.convertToRole("Leaf");
+                                }else{
+                                    particle.convertToRole("Coater");
+                                }
+                                break;
+                            }
+                        }
+                        break;
                     case "SmallLeader":
                         for (let j = 0; j < particleSystem.length; j++) {
                             if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
                                 pullParticle(particle, particleSystem[j]);
                                 particle.convertToRole("Leader");
+                                break;
+                            }
+                        }
+                        if(checkIfFollowerCanContract(particle)){
+                            contractParticle(particle);
+                            particle.convertToRole("Leader");
+                        }
+                        break;
+                    case "SmallSuperLeader":
+                        for (let j = 0; j < particleSystem.length; j++) {
+                            if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
+                                pullParticle(particle, particleSystem[j]);
+                                particle.convertToRole("SuperLeader");
                                 break;
                             }
                         }
@@ -1112,6 +1202,35 @@
         }
 
 
+        // MULTIPLE LEADER FUNCTIONS
+        function setSuperLeader(random) {
+            if(random){
+
+            }else{
+                var superLeaderPosition = new THREE.Vector3(-4, 6, 2);
+                for (let i = 0; i < particleSystem.length; i++) {
+                    if(particleSystem[i].head.position.distanceTo(superLeaderPosition) === 0){
+                        particleSystem[i].convertToRole("SuperLeader")
+                    }
+                }
+            }
+        }
+
+        function isNbrObject(particle){
+            for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
+                for (let j = 0; j < 12; j++) {
+                    let positionNbrParticle = particle.getPosAtFaceI(j);
+                    if(layer[Object.keys(layer).length-1][i].head.position.distanceTo(positionNbrParticle) === 0){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function initializeLeaderPointer(particle, pointerPosition){
+            particle.leaderPointer = pointerPosition;
+        }
 
 
         // DEBUG FUNCTIONS

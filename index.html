@@ -704,6 +704,7 @@
             particle.isContracted = true;
         }
 
+        var referenceCoordinate = new THREE.Vector3(0,0,0);
         function pullParticle(pullingParticle, pulledParticle){
             if(pullingParticle.tail.position.distanceTo(pulledParticle.head.position) > 4){
                 console.log("Particle pulling :");
@@ -718,6 +719,9 @@
             pulledParticle.headTailConnection.geometry.setFromPoints([pulledParticle.head.position, pulledParticle.tail.position]);
             pulledParticle.headTailConnection.visible = true;
             pulledParticle.isContracted = false;
+            if(pullingParticle.leaderPointer.distanceTo(referenceCoordinate) !== 0){
+                pullingParticle.leaderPointer = findTargetFace(pullingParticle, pullingParticle.tail.position);
+            }
             contractParticle(pullingParticle);
             if(pullingParticle.role === "Branch"){
                 updateSmallBranchTargets(pulledParticle, pullingParticle);
@@ -726,9 +730,6 @@
                     swapBranchTarget(pulledParticle);
                 }
                 updateBranchTargets(pulledParticle, pullingParticle);
-                // updateMultipleTargets(pulledParticle, pullingParticle);
-                // updateMultipleTargetMarkers(pulledParticle);
-
             }else{
                 updateSingleTarget(pulledParticle, pullingParticle.tail.position);
                 updateTargetMarker(pulledParticle);
@@ -743,12 +744,21 @@
                     return nbrFacePos;
                 }
             }
-            console.log("Target is not within vacinity of particle")
+            console.log("Error: Target is not a neighbour to particle");
+            pauseSimulation();
+            console.log("Error caused by particle:")
+            console.log(particle);
+            console.log("Attempted to assign Target:")
+            console.log(target);
         }
 
         var interestPoint = new THREE.Vector3(-4,14, 10);
         function updateSingleTarget(particle, target){
             particle.target = [];
+            particle.target.push(findTargetFace(particle, target));
+        }
+
+        function addTarget(particle, target){
             particle.target.push(findTargetFace(particle, target));
         }
 
@@ -761,7 +771,7 @@
             return true;
         }
 
-        function checkForTermination(particle){
+        function canLeaderRetire(particle){
             for (let i = 0; i < particleSystem.length ; i++) {
                 if(particleSystem[i].isContracted){
                     if(particle.target[0].distanceTo(particleSystem[i].head.position) === 0){
@@ -808,7 +818,9 @@
                                 else if(particleSystem[nbrParticleIdx].role === "Leader"){
                                     if(isNbrObject(particle)){
                                         particle.convertToRole("Leader");
-                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].head.position)
+                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].tail.position);
+                                        console.log("Leader Point set to: " );
+                                        console.log(particle.leaderPointer);
                                         break;
                                     }else{
                                         if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
@@ -821,7 +833,7 @@
                                 }else if(particleSystem[nbrParticleIdx].role === "SuperLeader"){
                                     if(isNbrObject(particle)){
                                         particle.convertToRole("Leader");
-                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].head.position)
+                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].tail.position)
                                         break;
                                     }else{
                                         if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
@@ -836,6 +848,18 @@
                             }
                         }
                         break;
+                    case "Bridge" :
+                        if(canBridgeRetire(particle)){
+                            if(doesBridgeHaveFollower(particle)){
+                                particle.convertToRole("Follower");
+                                particle.target = [];
+                                particle.target.push(findTargetFace(particle, particle.leaderPointer));
+                            }else{
+                                particle.convertToRole("Retired");
+                            }
+
+                        }
+                        break;
                     case "Leader":
                         if(expansionPhase){
                             if(particle.target.length === 0){
@@ -848,10 +872,9 @@
                                 }
                                 break;
                             }
-                            if(checkForTermination(particle)){
-                                particle.convertToRole("Retired");
-                                pauseSimulation();
-                                console.log("Layer Complete");
+                            if(canLeaderRetire(particle)){
+                                particle.convertToRole("Bridge");
+                                initializeBridge(particle);
                             }
                             if(!isAParticleTargetingMe(particle)){
                                 expansionPhase = true;
@@ -873,10 +896,12 @@
                                 }
                                 break;
                             }
-                            if(checkForTermination(particle)){
-                                particle.convertToRole("Retired");
-                                pauseSimulation();
-                                console.log("Layer Complete");
+                            if(canLeaderRetire(particle)){
+                                // particle.convertToRole("Retired");
+                                // pauseSimulation();
+                                // console.log("Layer Complete");
+                                particle.convertToRole("Bridge");
+                                initializeBridge(particle);
                             }
                             if(!isAParticleTargetingMe(particle)){
                                 expansionPhase = true;
@@ -966,6 +991,10 @@
                             if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
                                 pullParticle(particle, particleSystem[j]);
                                 particle.convertToRole("Leader");
+                                if(isSmallLeaderABridge(particle)){
+                                    // bridgeHandover(particle, particleSystem[j]);
+                                    particleSystem[j].convertToRole("SmallBridge");
+                                }
                                 break;
                             }
                         }
@@ -974,11 +1003,27 @@
                             particle.convertToRole("Leader");
                         }
                         break;
+                    case "Bridge" :
+                        for (let j = 0; j < particleSystem.length; j++) {
+                            if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
+                                pullParticle(particle, particleSystem[j]);
+                                if (particleSystem[j].role === "Follower"){
+                                    leaderPointerHandover(particle, particleSystem[j]);
+                                }
+                                bridgeTargetHandover(particle, particleSystem[j]);
+                                break;
+                            }
+                        }
+                        break;
                     case "SmallSuperLeader":
                         for (let j = 0; j < particleSystem.length; j++) {
                             if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
                                 pullParticle(particle, particleSystem[j]);
                                 particle.convertToRole("SuperLeader");
+                                if(isSmallLeaderABridge(particle)){
+                                    // bridgeHandover(particle, particleSystem[j]);
+                                    particleSystem[j].convertToRole("SmallBridge");
+                                }
                                 break;
                             }
                         }
@@ -1096,9 +1141,6 @@
                     swapBranchTarget(pulledParticle);
                 }
                 updateBranchTargets(pulledParticle, pullingParticle);
-                // updateMultipleTargets(pulledParticle, pullingParticle);
-                // updateMultipleTargetMarkers(pulledParticle);
-
             }else{
                 updateSingleTarget(pulledParticle, pullingParticle.tail.position);
                 updateTargetMarker(pulledParticle);
@@ -1157,7 +1199,7 @@
 
         // 3D Coordinate System Improvement
 
-        var coordinateSystem = new Array(new Array(new Array()));
+        var coordinateSystem = new Array(new Array([]));
         var negativeCoordinateOffset = 25;
         var useImprovedMethod = true;
 
@@ -1232,6 +1274,104 @@
             particle.leaderPointer = pointerPosition;
         }
 
+        function initializeBridge(particle){
+            particle.target = [];
+            for (let i = 0; i < particleSystem.length; i++) {
+                if(particleSystem[i].leaderPointer.distanceTo(particle.head.position) === 0){
+                    if(particleSystem[i].role === "Leader"){
+                        addTarget(particle, particleSystem[i].tail.position);
+                    }
+                }
+            }
+        }
+
+        function canBridgeRetire(particle){
+            for (let i = 0; i < particleSystem.length; i++) {
+                if(particleSystem[i].role === "Leader"){
+                    if(particleSystem[i].leaderPointer.distanceTo(particle.head.position) === 0) {
+                        return false;
+                    }
+                }else if(particleSystem[i].role === "Bridge"){
+                    if(particleSystem[i].leaderPointer.distanceTo(particle.head.position) === 0) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function doesBridgeHaveFollower(particle){
+            for (let i = 0; i < particleSystem.length; i++) {
+                for (let j = 0; j < particleSystem[i].target.length; j++) {
+                    if(doesTargetMatchTail(particleSystem[i].target[j], particle)){
+                        if(particleSystem[i].role === "Follower"){
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function doesTargetMatchParticle(target, particle){
+            return doesTargetMatchTail(target, particle) || doesTargetMatchHead(target, particle);
+        }
+
+        function doesTargetMatchTail(target, particle){
+            return (particle.tail.position.distanceTo(target) === 0);
+        }
+
+        function doesTargetMatchHead(target, particle){
+            return (particle.head.position.distanceTo(target) === 0);
+        }
+
+        function doesParticleTargetsMatchParticle(nbrParticle, particle){
+            for (let i = 0; i < nbrParticle.target.length; i++) {
+                if(doesTargetMatchTail(nbrParticle.target[i], particle) || doesTargetMatchHead(nbrParticle.target[i], particle)){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function doesParticleTargetsMatchTail(nbrParticle, particle){
+            for (let i = 0; i < nbrParticle.target.length; i++) {
+                if(particle.tail.position.distanceTo(nbrParticle.target[i]) === 0){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function doesParticleTargetsMatchHead(nbrParticle, particle){
+            for (let i = 0; i < nbrParticle.target.length; i++) {
+                if(particle.head.position.distanceTo(nbrParticle.target[i]) === 0){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isSmallLeaderABridge(particle){
+            return (particle.leaderPointer.distanceTo(new THREE.Vector3(0, 0, 0)) !== 0)
+        }
+
+        function leaderPointerHandover(oldBridgeParticle, newBridgeParticle){
+            newBridgeParticle.leaderPointer = findTargetFace(newBridgeParticle, oldBridgeParticle.leaderPointer);
+        }
+
+        function bridgeTargetHandover(oldBridge, newBridge){
+            newBridge.target = [];
+            for (let i = 0; i < particleSystem.length; i++) {
+                if(particleSystem[i].leaderPointer.distanceTo(newBridge.head.position) === 0){
+                    if(particleSystem[i].role === "Leader"){
+                        addTarget(newBridge, particleSystem[i].tail.position);
+                    }
+                }
+            }
+            addTarget(newBridge, oldBridge.head.position);
+        }
+
 
         // DEBUG FUNCTIONS
         function update()
@@ -1273,7 +1413,8 @@
                         "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
                         "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
                         "Role : " + particle.role + "<br>"+
-                        "Target: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"
+                        "Target: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
+                        "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
                     ;
 
                 }else{
@@ -1283,7 +1424,8 @@
                         "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
                         "Role : " + particle.role + "<br>"+
                         "Target 1: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
-                        "Target 2: ( " + particle.target[1].x + ", "+ particle.target[1].y +", "+ particle.target[1].z +" )<br>"
+                        "Target 2: ( " + particle.target[1].x + ", "+ particle.target[1].y +", "+ particle.target[1].z +" )<br>"+
+                        "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
                     ;
                 }
 
@@ -1294,7 +1436,8 @@
                     "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
                     "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
                     "Role : " + particle.role + "<br>"+
-                    "Target : []"
+                    "Target : []"+"<br>"+
+                    "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
                 ;
             }
         }
@@ -1311,11 +1454,9 @@
                 var intersects = raycaster.intersectObjects( scene.children, true );
                 if ( intersects.length > 0 ) {
                     if ( INTERSECTED != intersects[ 0 ].object ) {
-
                         if ( INTERSECTED ){
                             // console.log("first " + INTERSECTED);
                         }
-
                         INTERSECTED = intersects[ 0 ].object;
                         if(previousObject == null){
                             removeOldFocusMesh();

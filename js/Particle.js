@@ -72,7 +72,8 @@ function Particle(){
                 break;
             case "SmallLeader":
                 this.role = "SmallLeader";
-                this.setParticleColor(0xfdbf6f);
+                // this.setParticleColor(0xfdbf6f);
+                this.setParticleColor(0xFF9224);
                 break;
             case "SuperLeader":
                 this.role = "SuperLeader";
@@ -80,19 +81,25 @@ function Particle(){
                 break;
             case "SmallSuperLeader":
                 this.role = "SmallSuperLeader";
-                this.setParticleColor(0xfb9a99);
+                // this.setParticleColor(0xfb9a99);
+                this.setParticleColor(0xE83B3E);
                 break;
             case "Bridge":
                 this.role = "Bridge";
-                this.setParticleColor(0x583B23);
+                this.setParticleColor(0xFFFF07);
+                break;
+            case "SmallBridge":
+                this.role = "Bridge";
+                this.setParticleColor(0xffff99);
                 break;
             case "Branch":
                 this.role = "Branch";
-                this.setParticleColor(0xb15928);
+                this.setParticleColor(0x583B23);
                 break;
             case "SmallBranch":
                 this.role = "SmallBranch";
-                this.setParticleColor(0xffff99);
+                // this.setParticleColor(0xb15928);
+                this.setParticleColor(0x7F5533);
                 break;
             case "Leaf":
                 this.role = "Leaf";
@@ -119,8 +126,8 @@ function Particle(){
     }
 
     this.getPosAtFaceI = function(faceNumber){
-        var particlePos = this.head.position;
-        var nbrParticlePos = new THREE.Vector3( 0, 0, 0 );
+        let particlePos = this.head.position;
+        let nbrParticlePos = new THREE.Vector3( 0, 0, 0 );
         switch(faceNumber) {
             case 0:
                 nbrParticlePos.setX( particlePos.x );

@@ -719,9 +719,13 @@
             pulledParticle.headTailConnection.geometry.setFromPoints([pulledParticle.head.position, pulledParticle.tail.position]);
             pulledParticle.headTailConnection.visible = true;
             pulledParticle.isContracted = false;
-            if(pullingParticle.leaderPointer.distanceTo(referenceCoordinate) !== 0){
-                pullingParticle.leaderPointer = findTargetFace(pullingParticle, pullingParticle.tail.position);
+            if(pullingParticle.role === "Bridge" || pullingParticle.role === "SmallLeader" || pullingParticle.role === "SmallSuperLeader"){
+                if(pullingParticle.leaderPointer.distanceTo(referenceCoordinate) !== 0){
+                    console.log("exception triggered");
+                    pullingParticle.leaderPointer = findTargetFace(pullingParticle, pullingParticle.tail.position);
+                }
             }
+
             contractParticle(pullingParticle);
             if(pullingParticle.role === "Branch"){
                 updateSmallBranchTargets(pulledParticle, pullingParticle);
@@ -818,9 +822,9 @@
                                 else if(particleSystem[nbrParticleIdx].role === "Leader"){
                                     if(isNbrObject(particle)){
                                         particle.convertToRole("Leader");
-                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].tail.position);
-                                        console.log("Leader Point set to: " );
-                                        console.log(particle.leaderPointer);
+                                        initializeLeaderPointer(particle, findTargetFace(particle, particleSystem[nbrParticleIdx].tail.position));
+                                        // console.log("Leader Point set to: " );
+                                        // console.log(particle.leaderPointer);
                                         break;
                                     }else{
                                         if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
@@ -833,7 +837,7 @@
                                 }else if(particleSystem[nbrParticleIdx].role === "SuperLeader"){
                                     if(isNbrObject(particle)){
                                         particle.convertToRole("Leader");
-                                        initializeLeaderPointer(particle, particleSystem[nbrParticleIdx].tail.position)
+                                        initializeLeaderPointer(particle, findTargetFace(particle, particleSystem[nbrParticleIdx].tail.position))
                                         break;
                                     }else{
                                         if(particleSystem[nbrParticleIdx].tail.position.distanceTo(nbrPosition) === 0){
@@ -961,13 +965,21 @@
                     case "Leader":
                         for (let j = 0; j < particleSystem.length; j++) {
                             if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
-                                pullParticle(particle, particleSystem[j]);
+                                if(!isNbrObject(particleSystem[j])){
+                                    pullParticle(particle, particleSystem[j]);
+                                    console.log("Leader hand over pointer to follower");
+                                    leaderPointerHandover(particle, particleSystem[j]);
+                                    console.log(particleSystem[j].leaderPointer);
+                                }else{
+                                    pullParticle(particle, particleSystem[j]);
+                                }
                                 particleSystem[j].convertToRole("SmallLeader");
                                 if(particle.target.length === 0){
                                     particle.convertToRole("Leaf");
                                 }else{
                                     particle.convertToRole("Coater");
                                 }
+                                particle.leaderPointer = referenceCoordinate;
                                 break;
                             }
                         }
@@ -975,6 +987,12 @@
                     case "SuperLeader":
                         for (let j = 0; j < particleSystem.length; j++) {
                             if(isParticleTargetingMyTail(particle, particleSystem[j]) && particleSystem[j].isContracted){
+                                if(!isNbrObject(particleSystem[j])){
+                                    pullParticle(particle, particleSystem[j]);
+                                    leaderPointerHandover(particle, particleSystem[j])
+                                }else{
+                                    pullParticle(particle, particleSystem[j]);
+                                }
                                 pullParticle(particle, particleSystem[j]);
                                 particleSystem[j].convertToRole("SmallSuperLeader");
                                 if(particle.target.length === 0){
@@ -1390,6 +1408,14 @@
             }
         }
 
+        function findObjectParticleWithObjectId(objectID){
+            for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
+                if((layer[Object.keys(layer).length-1][i].head.id === objectID) || (layer[Object.keys(layer).length-1][i].tail.id === objectID)){
+                    return layer[Object.keys(layer).length-1][i];
+                }
+            }
+        }
+
         function drawFocusMesh(position){
             var outlineMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.BackSide, wireframe: true } );
             outlineMesh = new THREE.Mesh( RhombicDodecahedronGeometry, outlineMaterial );
@@ -1403,19 +1429,36 @@
         }
 
         function addParticleDebugInfo(object){
-            var particle;
-            particle = findParticleWithObjectId(object.id);
+            let particle = findParticleWithObjectId(object.id);
+            let particleObject = findObjectParticleWithObjectId(object.id);
             // console.log(particle);
-            if(particle.target.length !== 0){
-                if(particle.target.length < 2){
-                    document.querySelector('.debugParticle').innerHTML =
-                        "Position: ( " + outlineMesh.position.x + ", "+ outlineMesh.position.y +", "+ outlineMesh.position.z +" )<br>"+
-                        "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
-                        "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
-                        "Role : " + particle.role + "<br>"+
-                        "Target: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
-                        "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
-                    ;
+            if(typeof particle === 'undefined' && typeof particleObject !== 'undefined'){
+                document.querySelector('.debugParticle').innerHTML =
+                    "Position: ( " + outlineMesh.position.x + ", "+ outlineMesh.position.y +", "+ outlineMesh.position.z +" )<br>"
+            }else if(typeof particle !== 'undefined' && typeof particleObject === 'undefined'){
+                if(particle.target.length !== 0){
+                    if(particle.target.length < 2){
+                        document.querySelector('.debugParticle').innerHTML =
+                            "Position: ( " + outlineMesh.position.x + ", "+ outlineMesh.position.y +", "+ outlineMesh.position.z +" )<br>"+
+                            "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
+                            "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
+                            "Role : " + particle.role + "<br>"+
+                            "Target: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
+                            "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
+                        ;
+
+                    }else{
+                        document.querySelector('.debugParticle').innerHTML =
+                            "Position: ( " + outlineMesh.position.x + ", "+ outlineMesh.position.y +", "+ outlineMesh.position.z +" )<br>"+
+                            "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
+                            "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
+                            "Role : " + particle.role + "<br>"+
+                            "Target 1: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
+                            "Target 2: ( " + particle.target[1].x + ", "+ particle.target[1].y +", "+ particle.target[1].z +" )<br>"+
+                            "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
+                        ;
+                    }
+
 
                 }else{
                     document.querySelector('.debugParticle').innerHTML =
@@ -1423,23 +1466,12 @@
                         "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
                         "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
                         "Role : " + particle.role + "<br>"+
-                        "Target 1: ( " + particle.target[0].x + ", "+ particle.target[0].y +", "+ particle.target[0].z +" )<br>"+
-                        "Target 2: ( " + particle.target[1].x + ", "+ particle.target[1].y +", "+ particle.target[1].z +" )<br>"+
+                        "Target : []"+"<br>"+
                         "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
                     ;
                 }
-
-
-            }else{
-                document.querySelector('.debugParticle').innerHTML =
-                    "Position: ( " + outlineMesh.position.x + ", "+ outlineMesh.position.y +", "+ outlineMesh.position.z +" )<br>"+
-                    "Head Position : ("+ particle.head.position.x + ", "+ particle.head.position.y +", "+ particle.head.position.z +" )<br>"+
-                    "Tail Position : ("+ particle.tail.position.x + ", "+ particle.tail.position.y +", "+ particle.tail.position.z +" )<br>"+
-                    "Role : " + particle.role + "<br>"+
-                    "Target : []"+"<br>"+
-                    "Next Leader: ( "+ + particle.leaderPointer.x + ", "+ particle.leaderPointer.y +", "+ particle.leaderPointer.z +" )"
-                ;
             }
+
         }
 
         var previousObject;

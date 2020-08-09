@@ -1,3 +1,5 @@
+var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} )
+
 function Particle(){
     this.role = "temp";
     this.color = "#ff00ff";
@@ -10,10 +12,14 @@ function Particle(){
     this.head = new THREE.Object3D().add(this.headRhombic, this.headPoint);
     this.tail = new THREE.Object3D().add(this.tailRhombic, this.tailPoint);
     this.target = [];
-    this.target0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0xff00ff, dashSize: 0.1, gapSize: 0.1 }));
-    this.target1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0x00ffff, dashSize: 0.1, gapSize: 0.1 }));
-    // this.targetConnection = new THREE.ArrowHelper(this.head.position)
-    this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
+    this.target0 = new THREE.Mesh( new THREE.ConeBufferGeometry( 0.1, 1, 8).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0xffff00} ) );
+    this.target1 = new THREE.Mesh( new THREE.ConeBufferGeometry( 0.1, 1, 8).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0xffff00} ) );
+
+    // this.target0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0xff00ff, dashSize: 0.1, gapSize: 0.1 }));
+    // this.target1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0x00ffff, dashSize: 0.1, gapSize: 0.1 }));
+    // this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
+    this.headTailConnection = new THREE.Mesh( new THREE.CylinderBufferGeometry( 0.1, 0.1, 2).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0xffff00} ) );
+
     this.isContracted = true;
     this.leaderPointer = new THREE.Vector3(0,0,0);
 
@@ -38,7 +44,7 @@ function Particle(){
         this.tail.position.set(this.head.position.x, this.head.position.y, this.head.position.z);
         this.tail.visible = true;
         this.head.position.set(destinationNode.x, destinationNode.y, destinationNode.z);
-        this.headTailConnection.geometry.setFromPoints([this.head.position, this.tail.position]);
+        // this.headTailConnection.geometry.setFromPoints([this.head.position, this.tail.position]);
         this.headTailConnection.visible = true;
         this.isContracted = false;
     }
@@ -89,7 +95,7 @@ function Particle(){
                 this.setParticleColor(0xFFFF07);
                 break;
             case "SmallBridge":
-                this.role = "Bridge";
+                this.role = "SmallBridge";
                 this.setParticleColor(0xffff99);
                 break;
             case "Branch":

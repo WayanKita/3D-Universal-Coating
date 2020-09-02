@@ -1,18 +1,82 @@
 var particles = {};
 var layer = {};
 var availablePositions = {};
-var object = new THREE.Group();
+var objectGroup = new THREE.Group();
+var objectParticleList = [];
+var objectPositionList = [];
+
 
 function generateObject(size, scene){
-    particles[0] = new Particle();
-    particles[0].head.position.set(0,0,0);
+    particles[0] = new THREE.Vector3(0,0,0);
+    particles[0].set(0,0,0);
     layer[0] = particles;
     for (let i = 0; i < size; i++) {
         addBoundingLayer(i, scene);
     }
     renderObject(scene);
     availablePositions = calculateAvailablePositions();
+    // for (let i = 0; i < objectParticleList.length; i++) {
+    //     console.log(objectParticleList[i].head.position)
+    // }
     return availablePositions;
+}
+
+var nbrPos = new THREE.Vector3( 0, 0, 0 );
+function getNbrPositions(position, nbrPositionIndex){
+        let particlePos = position;
+        switch(nbrPositionIndex) {
+            case 0:
+                nbrPos.set( particlePos.x, particlePos.y + 2, particlePos.z + 2);
+                break;
+            case 1:
+                nbrPos.set( particlePos.x + 2, particlePos.y, particlePos.z + 2);
+                // code block
+                break;
+            case 2:
+                nbrPos.set( particlePos.x, particlePos.y - 2, particlePos.z + 2);
+                // code block
+                break;
+            case 3:
+                nbrPos.set( particlePos.x - 2, particlePos.y, particlePos.z + 2);
+                // code block
+                break;
+            case 4:
+                nbrPos.set( particlePos.x, particlePos.y - 2, particlePos.z - 2);
+                // code block
+                break;
+            case 5:
+                nbrPos.set( particlePos.x - 2, particlePos.y, particlePos.z - 2);
+                // code block
+                break;
+            case 6:
+                nbrPos.set( particlePos.x, particlePos.y + 2, particlePos.z - 2);
+                // code block
+                break;
+            case 7:
+                nbrPos.set( particlePos.x + 2, particlePos.y, particlePos.z - 2);
+                // code block
+                break;
+            case 8:
+                nbrPos.set( particlePos.x - 2, particlePos.y + 2, particlePos.z);
+                // code block
+                break;
+            case 9:
+                nbrPos.set( particlePos.x - 2, particlePos.y - 2, particlePos.z);
+                // code block
+                break;
+            case 10:
+                nbrPos.set( particlePos.x + 2, particlePos.y + 2, particlePos.z);
+                // code block
+                break;
+            case 11:
+                nbrPos.set( particlePos.x + 2, particlePos.y - 2, particlePos.z);
+                // code block
+                break;
+            default:
+                console.log("Error, get nbr particle to face failed");
+                return nbrPos;
+        }
+        return nbrPos;
 }
 
 
@@ -22,9 +86,9 @@ function addBoundingLayer(layerIdx){
     var particleNbrPosition;
     if(layerIdx < 1){
         for (let i = 0; i < 12; i++) {
-            particleNbrPosition = layer[layerIdx][0].getPosAtFaceI(i);
-            particlesForLayer[arrayIdx] = new Particle();
-            particlesForLayer[arrayIdx].head.position.set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
+            particleNbrPosition = getNbrPositions(layer[layerIdx][0], i);
+            particlesForLayer[arrayIdx] = new THREE.Vector3(0,0,0);
+            particlesForLayer[arrayIdx].set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
             arrayIdx++;
         }
         layer[layerIdx+1] = particlesForLayer;
@@ -34,12 +98,12 @@ function addBoundingLayer(layerIdx){
             // For each face of that particle
             for (let i = 0; i < 12; i++) {
                 // Get position adjacent to face j
-                particleNbrPosition = layer[layerIdx][j].getPosAtFaceI(i);
+                particleNbrPosition = getNbrPositions(layer[layerIdx][j], i);
                 if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx])){
                     if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx-1])){
                         if(!doesPositionExistInLayer(particleNbrPosition, particlesForLayer)) {
-                            particlesForLayer[arrayIdx] = new Particle();
-                            particlesForLayer[arrayIdx].head.position.set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
+                            particlesForLayer[arrayIdx] = new THREE.Vector3(0,0,0);
+                            particlesForLayer[arrayIdx].set(particleNbrPosition.x, particleNbrPosition.y, particleNbrPosition.z);
                             arrayIdx++;
                         }
                     }
@@ -53,7 +117,7 @@ function addBoundingLayer(layerIdx){
 }
 function doesPositionExistInLayer(position, layer){
     for (let i = 0; i < Object.keys(layer).length; i++) {
-        if(position.distanceTo(layer[i].head.position) === 0) {
+        if(position.distanceTo(layer[i]) === 0) {
             return true;
         }
     }
@@ -71,9 +135,16 @@ function doesPositionExistInPositionList(position, positionList){
 
 function renderObject(scene){
     for (let j = 0; j < Object.keys(layer[Object.keys(layer).length-1]).length; j++) {
-        layer[Object.keys(layer).length-1][j].convertToRole("Boundary");
-        scene.add(layer[Object.keys(layer).length-1][j].head);
+        // layer[Object.keys(layer).length-1][j].convertToRole("Boundary");
+        var position = layer[Object.keys(layer).length-1][j];
+        objectParticleList.push(new ObjectParticle());
+        objectParticleList[j].head.position.set(position.x, position.y, position.z);
+        objectParticleList[j].matrixAutoUpdate = false;
+        // objectGroup.add(objectParticleList[j].head);
+        scene.add(objectParticleList[j].head);
     }
+    console.log(objectParticleList.length);
+    // scene.add(objectGroup);
 }
 
 function calculateAvailablePositions(){
@@ -85,7 +156,7 @@ function calculateAvailablePositions(){
         // For each face of that particle
         for (let i = 0; i < 12; i++) {
             // Get position adjacent to face j
-            particleNbrPosition = layer[layerIdx][j].getPosAtFaceI(i);
+            particleNbrPosition = getNbrPositions(layer[layerIdx][j], i);
             if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx])){
                 if(!doesPositionExistInLayer(particleNbrPosition, layer[layerIdx-1])){
                     if(!doesPositionExistInPositionList(particleNbrPosition, avPosition)) {

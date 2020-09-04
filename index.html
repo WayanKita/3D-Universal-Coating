@@ -172,17 +172,9 @@
             toggleAxis: true,
             togglePointLightHelper: false,
             debugMode: false,
-            // toggleSpotLightHelper: false,
-            color: "#ffff00",
-            wireFrame: false,
-            extent: false,
-            movement: false,
-            objectcolor: "#00ff00",
-            objectwireFrame: false,
-            objectextent: false,
-            role: "Inactive",
+            highlightTree: true,
+            highlightLeaderTree: false,
             initialParticlecolor: "#00ff00",
-            initialParticlewireFrame: false,
             initialParticleextent: true,
             createTree: function(){ createTree = true },
             play: function(){ playSimulation() },
@@ -220,109 +212,38 @@
         debugGroup.add(settings, "debugMode").name( "Debug" ).onChange(function (value) {
             debugMode = value;
         })
-        // debugGroup.add(settings, "toggleSpotLightHelper").name( "Spot Light Helper" ).onChange(function (visible) {
-        //     spotLightHelper.visible = visible;
-        // })
-        // debugGroup.open();
 
-        if(singleLeader){
-            let particleGroup = gui.addFolder( 'Particle Settings' );
-            particleGroup.addColor( settings, "color").name( "Color" ).onChange(function(value){
-                coatingParticle.headRhombic.material.color.set(value);
-            });
-            particleGroup.add( settings, "wireFrame").name( "Wireframe" ).onChange(function(visible){
-                coatingParticle.headRhombic.material.wireframe = visible;
-            });
-            particleGroup.add( settings, "extent").name( "Extent" ).onChange(function(visible){
-                coatingParticle.headRhombic.visible = !visible;
-                coatingParticle.headPoint.visible = visible;
-                coatingParticle.tailRhombic.visible = !visible;
-                coatingParticle.tailPoint.visible = visible;
-            });
-            particleGroup.add( settings, "movement").name( "Movement" ).onChange(function(value){
-                if(value){
-                    speed = 0.1;
-                }else{
-                    speed = 0;
+        let OptionGroup = gui.addFolder( 'Options' );
+
+        OptionGroup.add( settings, "highlightTree").name( "Show Tree" ).onChange(function(visible){
+            treeVisible = visible;
+            for (let i = 0; i < particleSystem.length; i++) {
+                if( particleSystem[i].target.length>1){
+                    particleSystem[i].target0Line.visible = visible;
+                    particleSystem[i].target1Line.visible = visible;
+                }else if(particleSystem[i].target.length >0){
+                    particleSystem[i].target0Line.visible = visible;
                 }
-
-            });
-            particleGroup.add( settings, 'role', [ "Inactive", "Retired", "Follower", "Coater", "Leader", "SmallLeader", "Branch", "SmallBranch", "Boundary"] ).name('Role').onChange(function(value){
-                switch (value) {
-                    case "Inactive":
-                        coatingParticle.headRhombic.material.color.set(0x6C757D);
-                        break;
-                    case "Retired":
-                        coatingParticle.headRhombic.material.color.set(0x121417);
-                        break;
-                    case "Follower":
-                        coatingParticle.headRhombic.material.color.set(0x1D3557);
-                        break;
-                    case "Coater":
-                        coatingParticle.headRhombic.material.color.set(0x1D3557);
-                        break;
-                    case "Leader":
-                        coatingParticle.headRhombic.material.color.set(0xCF2626);
-                        break;
-                    case "SmallLeader":
-                        coatingParticle.headRhombic.material.color.set(0xEA6C1B);
-                        break;
-                    case "Branch":
-                        coatingParticle.headRhombic.material.color.set(0x583B23);
-                        break;
-                    case "SmallBranch":
-                        coatingParticle.headRhombic.material.color.set(0x754E2F);
-                        break;
-                    case "Boundary":
-                        coatingParticle.headRhombic.material.color.set(0x000000);
-                        break;
-                    default:
-                        break
-
-                }
-            });
-            particleGroup.open();
-        }
-
-
-        let objectGroup = gui.addFolder( 'Object Settings' );
-        // objectGroup.addColor( settings, "objectcolor").name( "Color" ).onChange(function(value){
-        //     for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
-        //         layer[Object.keys(layer).length-1][i].head[0].material.color.set(value);
-        //     }
-        // });
-        objectGroup.add( settings, "objectwireFrame").name( "Wireframe" ).onChange(function(visible){
-            for (let i = 0; i < Object.keys(layer[Object.keys(layer).length-1]).length; i++) {
-                layer[Object.keys(layer).length-1][i].head.material.wireframe = visible;
             }
         });
-        objectGroup.add( settings, "objectextent").name( "Extent" ).onChange(function(visible){
-            for (let j = 0; j < Object.keys(layer[Object.keys(layer).length-1]).length; j++) {
-                layer[Object.keys(layer).length-1][j].headRhombic.visible = !visible;
-                layer[Object.keys(layer).length-1][j].headPoint.visible = visible;
+        OptionGroup.add( settings, "highlightLeaderTree").name( "Show Leader Tree" ).onChange(function(visible){
+            treeLeaderVisible = visible;
+            for (let i = 0; i < particleSystem.length; i++) {
+                if( particleSystem[i].leaderPointer.distanceTo(referenceCoordinate)>1){
+                    particleSystem[i].nextLeaderLine0.visible = visible;
+
+                }
+                if(particleSystem[i].oldLeaderPointer.distanceTo(referenceCoordinate)>1){
+                    particleSystem[i].nextLeaderLine1.visible = visible;
+                }
             }
-        })
-        objectGroup.open();
+        });
+        OptionGroup.open();
+
+
 
         let initialParticleGroup = gui.addFolder( 'Initial Particles Settings' );
-        // initialParticleGroup.addColor( settings, "initialParticlecolor").name( "Color" ).onChange(function(value){
-        //     for (let i = 0; i < Object.keys(initialParticles).length; i++) {
-        //         initialParticles[i].head.material.color.set(value);
-        //     }
-        // });
-        initialParticleGroup.add( settings, "initialParticlewireFrame").name( "Wireframe" ).onChange(function(visible){
-            for (let i = 0; i < Object.keys(initialParticles).length; i++) {
-                initialParticles[i].head.material.wireframe = visible;
-            }
-        });
-        // initialParticleGroup.add( settings, "initialParticleextent").name( "Extent" ).onChange(function(visible){
-        //     for (let i = 0; i < Object.keys(initialParticles).length; i++) {
-        //         initialParticles[i].headRhombic.visible = !visible;
-        //         initialParticles[i].headPoint.visible = visible;
-        //         initialParticles[i].tailRhombic.visible = !visible;
-        //         initialParticles[i].tailPoint.visible = visible;
-        //     }
-        // });
+
         initialParticleGroup.add( settings, "initialParticleextent").name( "Extent" ).onChange(function(visible){
             for (let i = 0; i < particleSystem.length; i++) {
                 particleSystem[i].headRhombic.visible = !visible;
@@ -571,6 +492,12 @@
             }
         }
 
+        function initializeSchedulers(){
+            for (let i = 0; i < particleSystem.length; i++) {
+
+            }
+        }
+
         function doesPositionExistInParticleList(position){
             for (let i = 0; i < particleSystem.length; i++) {
                 if(position.distanceTo(particleSystem[i].head.position) === 0) {
@@ -617,7 +544,7 @@
                     console.log("Of particle:")
                     console.log(nbrParticle);
                 }
-                if(nbrParticle.target[i].distanceTo(particle.tail.position) === 0){
+                if(nbrParticle.target[i].distanceTo(particle.tail.position) < 0.1){
                     return true;
                 }
             }
@@ -705,22 +632,17 @@
             let tempTarget0 = branch.target[0];
             let tempTarget1 = branch.target[1];
             branch.target = [];
-            branch.target.push(tempTarget1);
-            branch.target.push(tempTarget0);
+            branch.target.push(findTargetFace(branch, tempTarget1));
+            branch.target.push(findTargetFace(branch, tempTarget0));
         }
 
         function updateBranchTargets(branch, pullingParticle){
             branch.target[0] = findTargetFace(branch, pullingParticle.tail.position);
-            updateTargetMarker(branch);
-            // branch.target0.geometry.setFromPoints(getTargetMarkerPoints(branch.head.position, branch.target[0]));
-            // branch.target1.geometry.setFromPoints(getTargetMarkerPoints(branch.head.position, branch.target[1]));
-
         }
 
         function updateSmallBranchTargets(smallBranch, branch){
             smallBranch.target[0] = findTargetFace(smallBranch, branch.head.position);
             smallBranch.target.push(findTargetFace(smallBranch, branch.target[1]));
-            updateTargetMarker(smallBranch);
             // smallBranch.target0.geometry.setFromPoints(getTargetMarkerPoints(smallBranch.head.position, branch.target[0]));
             // smallBranch.target1.geometry.setFromPoints(getTargetMarkerPoints(smallBranch.head.position, branch.target[1]));
         }
@@ -762,6 +684,7 @@
                                 particle.target = [];
                                 particle.target.push(target);
                             }
+                            updateTargetMarker(particle);
                             return;
                         }
                     }
@@ -818,8 +741,6 @@
                     inverseOldNewLeaderPointer(pulledParticle);
                 }
             }
-
-
             contractParticle(pullingParticle);
             if(pullingParticle.role === "Branch"){
                 updateSmallBranchTargets(pulledParticle, pullingParticle);
@@ -830,7 +751,17 @@
                 updateBranchTargets(pulledParticle, pullingParticle);
             }else{
                 updateSingleTarget(pulledParticle, pullingParticle.tail.position);
-                updateTargetMarker(pulledParticle);
+            }
+            updateTargetMarker(pulledParticle);
+            updateTargetMarker(pullingParticle);
+            if(pullingParticle.role === "Bridge" ||
+                pullingParticle.role === "SmallBridge" ||
+                pullingParticle.role === "Leader"||
+                pullingParticle.role === "SmallLeader" ||
+                pullingParticle.role === "SuperLeader" ||
+                pullingParticle.role === "SmallSuperLeader"){
+                updateLeaderMarker(pullingParticle);
+                updateLeaderMarker(pulledParticle);
             }
         }
 
@@ -842,10 +773,10 @@
         }
 
         function alignSecondTargetConesToPoints(particle, position, target){
-            particle.target0.position.setX((position.x + target.x) / 2);
-            particle.target0.position.setY((position.y + target.y) / 2);
-            particle.target0.position.setZ((position.z + target.z) / 2);
-            particle.target0.lookAt(target);
+            particle.target1.position.setX((position.x + target.x) / 2);
+            particle.target1.position.setY((position.y + target.y) / 2);
+            particle.target1.position.setZ((position.z + target.z) / 2);
+            particle.target1.lookAt(target);
         }
 
         function updateHeadTailMarker(particle){
@@ -894,7 +825,7 @@
             return false;
         }
 
-        var interestPoint = new THREE.Vector3(-4,14, 10);
+        // var interestPoint = new THREE.Vector3(-4,14, 10);
         function updateSingleTarget(particle, target){
             particle.target = [];
             particle.target.push(findTargetFace(particle, target));
@@ -938,6 +869,7 @@
         var particleSystem = [];
         var expansionPhase = true;
         gatherParticles();
+        initializeSchedulers();
         setSuperLeader(false);
 
         function iterationStep(particle){
@@ -1060,6 +992,7 @@
                             if (canExpand(availablePositions)) {
                                 particle.expandParticle(availablePositions[getRandomInt(0, availablePositions.length - 1)]);
                                 updateHeadTailMarker(particle);
+                                updateTargetMarker(particle);
                                 break;
                             }
                             if(!hasFollower(particle)){
@@ -1089,8 +1022,7 @@
                                 }
                             }else{
                                 if(!hasParentInT_L(particle)){
-                                    // particle.convertToRole("Bridge");
-                                    // particle.target = [];
+                                    particle.convertToRole("Bridge");
                                     break;
                                 }else{
                                     particle.convertToRole("Bridge");
@@ -1108,6 +1040,7 @@
                             if (canExpand(availablePositions)) {
                                 particle.expandParticle(availablePositions[getRandomInt(0, availablePositions.length - 1)]);
                                 updateHeadTailMarker(particle);
+                                updateTargetMarker(particle);
                                 break;
                             }
                         }
@@ -1134,6 +1067,7 @@
                         if(availablePositions.length > 0){
                             particle.expandParticle(availablePositions[getRandomInt(0, availablePositions.length-1)]);
                             updateHeadTailMarker(particle);
+                            updateTargetMarker(particle);
                         }else{
                             particle.convertToRole("Retired");
                             particle.target = [];
@@ -1146,16 +1080,16 @@
                     case "Coater":
                         if(isTargetOfRole(particle, "Retired")){
                             particle.convertToRole("Leaf");
-                            scene.remove(particle.target0);
+                            updateTargetMarker(particle);
                             break;
                         }
                         if(canCoaterBranch(particle)){
                             let availablePositions = getAvExpandPosition(particle);
-                            let target = particle.target;
+                            let target = findTargetFace(particle, particle.target[0]);
                             if(availablePositions.length > 0) {
                                 particle.expandParticle(availablePositions[getRandomInt(0, availablePositions.length - 1)]);
                                 particle.convertToRole("Leaf");
-                                particle.target = target;
+                                particle.target[0] = target;
                                 updateTargetMarker(particle);
                                 // addBranchTargetVisualMarker(particle);
                             }
@@ -1185,8 +1119,12 @@
                                 particleSystem[j].convertToRole("SmallLeader");
                                 if(particle.target.length === 0){
                                     particle.convertToRole("Leaf");
+                                    retireLeaderMarket(particle);
+                                    updateTargetMarker(particle);
                                 }else{
                                     particle.convertToRole("Coater");
+                                    retireLeaderMarket(particle);
+                                    updateTargetMarker(particle);
                                 }
                                 particle.leaderPointer = referenceCoordinate;
                                 particle.oldLeaderPointer = referenceCoordinate;
@@ -1232,6 +1170,7 @@
                                     particle.convertToRole("Leaf");
                                 }else{
                                     particle.convertToRole("Coater");
+                                    updateTargetMarker(particle);
                                 }
                                 particle.leaderPointer = referenceCoordinate;
                                 particle.oldLeaderPointer = referenceCoordinate;                                break;
@@ -1306,7 +1245,11 @@
                                 particleSystem[j].convertToRole("SmallBranch");
                                 particle.convertToRole("Coater");
                                 particle.target.pop();
+
+                                updateTargetMarker(particleSystem[j]);
+                                updateTargetMarker(particle);
                                 particle.target1.visible = false;
+                                particle.target1Line.visible = false;
                                 break;
                             }
                         }
@@ -1570,8 +1513,9 @@
         }
 
         function initializeLeaderPointer(particle, pointerPosition){
-            particle.leaderPointer = findTargetFace(particle, pointerPosition);
-            particle.oldLeaderPointer = findTargetFace(particle, pointerPosition);
+            particle.leaderPointer = findTargetFace(particle, findTargetFace(particle, pointerPosition));
+            particle.oldLeaderPointer = findTargetFace(particle, findTargetFace(particle, pointerPosition));
+            updateLeaderMarker(particle);
         }
 
         function initializeBridge(particle){
@@ -1718,21 +1662,11 @@
                 if(getNextLeader(particleSystem[i]).distanceTo(particle.head.position) === 0){
                     if(isBridgeReversed(particleSystem[i]) ||
                         particleSystem[i].role === "Retired"){
-                        console.log("gucci");
                     }else{
                         return false
                     }
                 }
             }
-            // for (let i = 0; i < particleSystem.length ; i++) {
-            //     if(getNextLeader(particleSystem[i]).distanceTo(particle.head.position) === 0){
-            //         if(isBridgeReversed(particleSystem[i]) ){
-            //             console.log("gucci");
-            //         }else{
-            //             return false
-            //         }
-            //     }
-            // }
             return true;
 
         }
@@ -1934,27 +1868,126 @@
             }
         }
 
+        var treeLeaderVisible = false;
+        function retireLeaderMarket(particle){
+            if(particle.role === "Leaf" || particle.role === "Coater"){
+                scene.remove(particle.nextLeaderLine0);
+                scene.remove(particle.nextLeaderLine1);
+            }
+        }
+
+
+        function updateLeaderMarker(particle){
+            if(particle.leaderPointer.distanceTo(referenceCoordinate) > 1){
+                if(isTargetAdjacentToHead(particle, particle.leaderPointer)){
+                    particle.nextLeaderLine0.geometry.setFromPoints([particle.head.position, particle.leaderPointer]);
+                }else{
+                    particle.nextLeaderLine0.geometry.setFromPoints([particle.tail.position,  particle.leaderPointer]);
+                }
+
+            }
+            if(particle.oldLeaderPointer.distanceTo(referenceCoordinate) > 1) {
+                if (isTargetAdjacentToHead(particle, particle.oldLeaderPointer)) {
+                    particle.nextLeaderLine1.geometry.setFromPoints([particle.head.position, particle.oldLeaderPointer]);
+                } else {
+                    particle.nextLeaderLine1.geometry.setFromPoints([particle.tail.position, particle.oldLeaderPointer]);
+                }
+            }
+
+        }
+
         function updateTargetMarker(particle){
             let firstTarget;
             let secondTarget;
-            if(particle.target.length > 1){
-                particle.target0.visible = true;
-                particle.target1.visible = true;
-                firstTarget = getTargetMarkerPoints(particle.head.position, particle.target[0]);
-                secondTarget = getTargetMarkerPoints(particle.head.position, particle.target[1]);
-                alignFirstTargetConesToPoints(particle, firstTarget[0], firstTarget[1]);
-                alignSecondTargetConesToPoints(particle, secondTarget[0], secondTarget[1]);
-            }else if (particle.target.length > 0){
-                particle.target0.visible = true;
-                particle.target1.visible = false;
-                firstTarget = getTargetMarkerPoints(particle.head.position, particle.target[0]);
-                alignFirstTargetConesToPoints(particle, firstTarget[0], firstTarget[1]);
-            }else{
+            if(particle.role === "Leaf"){
                 particle.target0.visible = false;
                 particle.target1.visible = false;
+                if(treeVisible){
+                    particle.target0Line.visible = false;
+                    particle.target1Line.visible = false;
+                }
+                return;
             }
+            if(particle.target.length === 2){
+                particle.target0.visible = true;
+                particle.target1.visible = true;
+                if(treeVisible){
+                    particle.target0Line.visible = true;
+                    particle.target1Line.visible = true;
+                }
+                if(isTargetAdjacentToHead(particle, particle.target[0])){
+                    firstTarget = getTargetMarkerPoints(particle.head.position, particle.target[0]);
+                    particle.target0Line.geometry.setFromPoints([particle.head.position, particle.target[0]]);
 
-            // particle.target1.computeLineDistances();
+                }else{
+                    firstTarget = getTargetMarkerPoints(particle.tail.position, particle.target[0]);
+                    particle.target0Line.geometry.setFromPoints([particle.tail.position, particle.target[0]]);
+
+                }
+                if(isTargetAdjacentToHead(particle, particle.target[1])){
+                    secondTarget = getTargetMarkerPoints(particle.head.position, particle.target[1]);
+                    particle.target1Line.geometry.setFromPoints([particle.head.position, particle.target[1]]);
+
+                }else{
+                    secondTarget = getTargetMarkerPoints(particle.tail.position, particle.target[1]);
+                    particle.target1Line.geometry.setFromPoints([particle.tail.position, particle.target[1]]);
+
+                }
+                alignFirstTargetConesToPoints(particle, firstTarget[0], firstTarget[1]);
+                alignSecondTargetConesToPoints(particle, secondTarget[0], secondTarget[1]);
+            }else if (particle.target.length === 1){
+                particle.target0.visible = true;
+                particle.target1.visible = false;
+
+                firstTarget = getTargetMarkerPoints(particle.head.position, particle.target[0]);
+                alignFirstTargetConesToPoints(particle, firstTarget[0], firstTarget[1]);
+                if(treeVisible){
+                    particle.target0Line.visible = true;
+                    particle.target1Line.visible = false;
+                    particle.target0Line.geometry.setFromPoints([particle.head.position, particle.target[0]]);
+                }
+
+
+            }else if(particle.target.length === 0){
+                particle.target0.visible = false;
+                particle.target1.visible = false;
+                if(treeVisible){
+                    particle.target0Line.visible = true;
+                    particle.target1Line.visible = true;
+                }
+
+            }
+        }
+
+        var treeVisible = true;
+
+        function isTargetAdjacentToTail(particle, target){
+            for (let i = 0; i < 12; i++) {
+                let available_position = particle.getPosAtFaceI(particle, false);
+                if(available_position.distanceTo(target) === 0){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isTargetAdjacentToHead(particle, target){
+
+            // for (let i = 0; i < 12; i++) {
+            //     let available_position = particle.getPosAtFaceI(particle);
+            //     if(available_position.distanceTo(target) === 0){
+            //         if(particle.head.position.distanceTo(target) > 3){
+            //             console.log("problem, distance too great to be nbr");
+            //
+            //         }
+            //         return true;
+            //     }
+            // }
+            if(particle.head.position.distanceTo(target) < 3){
+               return true;
+
+            }
+            return false;
         }
 
         function updateBranchMarkerSpecial(particle){
@@ -1976,33 +2009,96 @@
 
         var particleSystemIdx = 0;
         var activations = 0;
+        const schedulers = {
+            SMA: 'SMA',
+            SSA: 'SSA',
+            ADVERSE: 'adverse'
+        }
+        var scheduler = schedulers.SSA;
+
+        //Scheduler
+        let smaSchedulerActivated = {};
+
         function nextSimulationStep(){
-            if(stopAtActivation > 0){
-               if(stopAtActivation === activations){
-                   pauseSimulation();
-               }
-            }
-            if(randomParticleSelection){
-                if(particleSystemIdx % (particleSystem.length) === 0){
-                    shuffleArray(particleSystem);
-                }
-            }
+            // if(stopAtActivation > 0){
+            //    if(stopAtActivation === activations){
+            //        pauseSimulation();
+            //    }
+            // }
+            // if(simulationRoundByRound){
+            //     for (let i = 0; i < particleSystem.length; i++) {
+            //         iterationStep(particleSystem[particleSystemIdx]);
+            //         particleSystemIdx++;
+            //         activations++;
+            //         particleSystemIdx = particleSystemIdx % (particleSystem.length);
+            //     }
+            // }else{
+            //     iterationStep(particleSystem[particleSystemIdx]);
+            //     particleSystemIdx++;
+            //     activations++;
+            //     particleSystemIdx = particleSystemIdx % (particleSystem.length);
+            // }
             if(simulationRoundByRound){
-                for (let i = 0; i < particleSystem.length; i++) {
+                while(!isRoundComplete() && simulationRoundByRound){
+                    particleSystemIdx = getNextParticleIdx();
                     iterationStep(particleSystem[particleSystemIdx]);
-                    particleSystemIdx++;
                     activations++;
-                    particleSystemIdx = particleSystemIdx % (particleSystem.length);
+                }
+                if(isRoundComplete()){
+                    initializeRound();
                 }
             }else{
+                particleSystemIdx = getNextParticleIdx();
+                console.log(particleSystemIdx)
                 iterationStep(particleSystem[particleSystemIdx]);
-                particleSystemIdx++;
+
                 activations++;
-                particleSystemIdx = particleSystemIdx % (particleSystem.length);
+                if(isRoundComplete()){
+                    console.log("round complte")
+                    initializeRound();
+                }
             }
 
 
             document.querySelector('.simulationInfo').innerHTML = 'Number of activations: ' + activations + ' Round : '+ Math.ceil(activations/particleSystem.length);
+        }
+
+        function getNextParticleIdx(){
+            switch (scheduler) {
+                case schedulers.SMA:
+                    particleSystemIdx = getRandomInt(0, particleSystem.length-1);
+                    smaSchedulerActivated[particleSystemIdx] = 1;
+                    return particleSystemIdx;
+                case schedulers.SSA:
+                    return particleSystemIdx+=1;
+                case schedulers.ADVERSE:
+                    break;
+            }
+        }
+
+        function isRoundComplete(){
+            switch (scheduler) {
+                case schedulers.SMA:
+                    return particleSystem.length === smaSchedulerActivated.length;
+                case schedulers.SSA:
+                    return (particleSystemIdx % (particleSystem.length-1) === 0 && particleSystemIdx !== 0);
+                case schedulers.ADVERSE:
+                    break;
+            }
+        }
+
+        function initializeRound(){
+            switch (scheduler) {
+                case schedulers.SMA:
+                    smaSchedulerActivated = {}
+                    break;
+                case schedulers.SSA:
+                    particleSystemIdx = -1;
+                    // shuffleArray(particleSystem);
+                    break;
+                case schedulers.ADVERSE:
+                    break;
+            }
         }
 
 
@@ -2013,6 +2109,24 @@
                 array[i] = array[j];
                 array[j] = temp;
             }
+        }
+
+        function shuffleArrayFisherYates(array) {
+            var m = array.length, t, i;
+
+            // While there remain elements to shuffle…
+            while (m) {
+
+                // Pick a remaining element…
+                i = Math.floor(Math.random() * m--);
+
+                // And swap it with the current element.
+                t = array[m];
+                array[m] = array[i];
+                array[i] = t;
+            }
+
+            return array;
         }
 
         function setSimulationRoundByRound(){
@@ -2057,6 +2171,7 @@
         let stopAtActivation = 0;
         var randomParticleSelection = false;
         var simulationRoundByRound = false;
+
 
 
         var animate = function () {

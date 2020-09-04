@@ -16,8 +16,12 @@ function Particle(){
     this.target0 = new THREE.Mesh( new THREE.ConeBufferGeometry( 0.3, 0.7, 3, 1, true).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0x000000} ) );
     this.target1 = new THREE.Mesh( new THREE.ConeBufferGeometry( 0.3, 0.7, 3, 1, true).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0x000000} ) );
 
-    // this.target0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0xff00ff, dashSize: 0.1, gapSize: 0.1 }));
-    // this.target1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color: 0x00ffff, dashSize: 0.1, gapSize: 0.1 }));
+    this.target0Line = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
+    this.target1Line = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
+
+    this.nextLeaderLine0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
+    this.nextLeaderLine1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
+
     // this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
     this.headTailConnection = new THREE.Mesh( new THREE.CylinderBufferGeometry( 0.1, 0.1, 2, 3, 1, true).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0xffff00} ) );
 
@@ -204,7 +208,7 @@ function Particle(){
                 nbrParticlePos.setZ( particlePos.z );
                 break;
             default:
-                console.log("Error, get nbr particle to face failed");
+                // console.log("Error, get nbr particle to face failed");
                 return nbrParticlePos;
         }
         return nbrParticlePos;

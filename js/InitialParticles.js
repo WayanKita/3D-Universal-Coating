@@ -276,6 +276,11 @@ function renderInitialParticles(scene){
         scene.add(initialParticles[j].tail);
         scene.add(initialParticles[j].headTailConnection);
         scene.add(initialParticles[j].target0);
+        scene.add(initialParticles[j].target1);
+        scene.add(initialParticles[j].target0Line);
+        scene.add(initialParticles[j].target1Line);
+        scene.add(initialParticles[j].nextLeaderLine0);
+        scene.add(initialParticles[j].nextLeaderLine1);
     }
 }
 

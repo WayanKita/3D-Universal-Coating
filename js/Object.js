@@ -143,7 +143,7 @@ function renderObject(scene){
         // objectGroup.add(objectParticleList[j].head);
         scene.add(objectParticleList[j].head);
     }
-    console.log(objectParticleList.length);
+    // console.log(objectParticleList.length);
     // scene.add(objectGroup);
 }
 

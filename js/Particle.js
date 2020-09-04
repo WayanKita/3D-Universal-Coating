@@ -19,8 +19,8 @@ function Particle(){
     this.target0Line = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
     this.target1Line = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
 
-    this.nextLeaderLine0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
-    this.nextLeaderLine1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0x000000}));
+    this.nextLeaderLine0 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0xff00ff}));
+    this.nextLeaderLine1 = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color: 0xff00ff}));
 
     // this.headTailConnection = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints( [this.head.position, this.tail.position] ), new THREE.MeshBasicMaterial({color: 0x000000 }));
     this.headTailConnection = new THREE.Mesh( new THREE.CylinderBufferGeometry( 0.1, 0.1, 2, 3, 1, true).applyMatrix4( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) ), new THREE.MeshBasicMaterial( {color: 0xffff00} ) );
@@ -28,6 +28,7 @@ function Particle(){
     this.isContracted = true;
     this.leaderPointer = new THREE.Vector3(0,0,0);
     this.oldLeaderPointer = new THREE.Vector3(0,0,0);
+    this.specialFlag = 0;
 
 
     this.contractParticle = function () {
@@ -68,6 +69,11 @@ function Particle(){
                 break;
             case "Retired":
                 this.role = "Retired";
+                this.nextLeaderLine1.visible = false;
+                this.target0Line.visible = false;
+                this.target1Line.visible = false;
+                this.target0.visible = false;
+                this.target1.visible = false;
                 this.setParticleColor(0x6a3d9a);
                 break;
             case "Follower":

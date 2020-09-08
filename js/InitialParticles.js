@@ -150,8 +150,16 @@ var initialParticles = {};
 // fillRectangleFace({x: xOffSet, y: yOffSet, z: zOffSet}, 5, 3, 10, 10)
 let startOffset = getPosAtFace({x: xOffSet, y: yOffSet, z: zOffSet}, 7, 4);
 
+function createLine(numberParticles, startPos = startOffset, quadrant= 0){
+    let startPosVec = new THREE.Vector3(startPos.x, startPos.y, startPos.z);
+    for (let i = 0; i < numberParticles; i++) {
 
-createCube(216,startOffset);
+        createRhombicObject(startPosVec);
+        startPosVec = getPosAtFace(startPosVec, 10, 1);
+
+    }
+}
+
 
 function createRhombicObject(position){
     var initialParticle = new Particle();
@@ -177,13 +185,17 @@ function createRhombicObject(position){
 //     }
 // }
 var sidePos = [];
-function createCube(numberParticles, cornerPosition, quadrant= 0){
-    var cubeSideSize = Math.floor(Math.cbrt(numberParticles));
+function createCube(numberParticles, cornerPosition = startOffset, quadrant= 0){
+    var cubeSideSize = Math.ceil(Math.cbrt(numberParticles));
+    var layerSize = cubeSideSize*cubeSideSize;
+    var numCompleteLayer = Math.floor(numberParticles/layerSize);
+    var numParticlesLastLayer = numberParticles-(layerSize*numCompleteLayer)
+
     // var cubeSideSize = 10;
     let cornerPos = new THREE.Vector3(cornerPosition.x, cornerPosition.y, cornerPosition.z);
     let oldCornerPos;
     fillRectangleFace(cornerPos, 5, 3, cubeSideSize, cubeSideSize);
-    for (let i = 1; i < cubeSideSize; i++) {
+    for (let i = 1; i < numCompleteLayer+1; i++) {
         oldCornerPos = cornerPos;
         if(i%2 === 0){
             cornerPos = getPosAtFace(oldCornerPos, 6,1);
@@ -192,9 +204,29 @@ function createCube(numberParticles, cornerPosition, quadrant= 0){
             cornerPos = getPosAtFace(oldCornerPos, 0,1);
             // cubePositionList.push(new THREE.Vector3(cornerPosition.x, cornerPosition.y, cornerPosition.z));
         }
-        fillRectangleFace(cornerPos, 5, 3, cubeSideSize, cubeSideSize);
+        if(i === numCompleteLayer ){
+            fillLastFace(cornerPos, 5, 3, cubeSideSize, cubeSideSize, numParticlesLastLayer);
+        }else{
+            fillRectangleFace(cornerPos, 5, 3, cubeSideSize, cubeSideSize);
+        }
     }
 
+
+}
+
+function fillLastFace(cornerPosition, lengthDir, widthDir, lengthSize, widthSize, numParticle){
+    let counter = 0;
+    for (let i = 0; i < lengthSize; i++) {
+        let lineStart = getPosAtFace(cornerPosition, lengthDir, i);
+        for (let j = 0; j < widthSize; j++) {
+            if(counter < numParticle){
+                createRhombicObject(getPosAtFace(lineStart, widthDir, j));
+                counter++;
+            }else{
+                return;
+            }
+        }
+    }
 }
 
 function fillRectangleFace(cornerPosition, lengthDir, widthDir, lengthSize, widthSize ){
@@ -205,8 +237,6 @@ function fillRectangleFace(cornerPosition, lengthDir, widthDir, lengthSize, widt
         }
 
     }
-
-    // cubePositionList.pop();
 }
 
 
@@ -280,7 +310,6 @@ function renderInitialParticles(scene){
         scene.add(initialParticles[j].target0Line);
         scene.add(initialParticles[j].target1Line);
         scene.add(initialParticles[j].nextLeaderLine0);
-        scene.add(initialParticles[j].nextLeaderLine1);
     }
 }
 

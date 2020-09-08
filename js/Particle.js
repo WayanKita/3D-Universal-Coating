@@ -2,7 +2,7 @@ var cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} )
 
 function Particle(){
     this.role = "temp";
-    this.material = new THREE.MeshPhongMaterial( { color: "#00ff00", wireframe: false, flatShading: true} );
+    this.material = new THREE.MeshPhongMaterial( { color: "#00ff00", wireframe: false, flatShading: true, transparent: true, opacity: 0.5} );
     // this.material = new THREE.MeshNormalMaterial({flatShading: true});
     this.headRhombic = new THREE.Mesh( RhombicDodecahedronGeometry, this.material);
     this.tailRhombic = new THREE.Mesh( RhombicDodecahedronGeometry, this.material);
